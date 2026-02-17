@@ -1,0 +1,460 @@
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"init.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "Core/Src/init.c"
+  18              		.section	.text.GPIO_Init,"ax",%progbits
+  19              		.align	1
+  20              		.global	GPIO_Init
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	GPIO_Init:
+  26              	.LFB0:
+   1:Core/Src/init.c **** #include "init.h"
+   2:Core/Src/init.c **** 
+   3:Core/Src/init.c **** // Глобальные переменные
+   4:Core/Src/init.c **** uint8_t pa0_mode = 0;
+   5:Core/Src/init.c **** uint8_t button1_state = 0;
+   6:Core/Src/init.c **** uint8_t button2_state = 0;
+   7:Core/Src/init.c **** uint8_t led1_state = 0;
+   8:Core/Src/init.c **** uint8_t led2_state = 0;
+   9:Core/Src/init.c **** uint8_t led3_state = 0;
+  10:Core/Src/init.c **** uint8_t led4_state = 0;
+  11:Core/Src/init.c **** 
+  12:Core/Src/init.c **** void GPIO_Init(void) {
+  27              		.loc 1 12 22 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		@ link register save eliminated.
+  13:Core/Src/init.c ****     // 1. Включаем тактирование GPIOA и GPIOC
+  14:Core/Src/init.c ****     SET_BIT(RCC_APB2ENR, RCC_GPIOA_EN | RCC_GPIOC_EN);
+  32              		.loc 1 14 5 view .LVU1
+  33 0000 214A     		ldr	r2, .L2
+  34 0002 9369     		ldr	r3, [r2, #24]
+  35 0004 43F01403 		orr	r3, r3, #20
+  36 0008 9361     		str	r3, [r2, #24]
+  15:Core/Src/init.c ****     
+  16:Core/Src/init.c ****     // 2. PA2 (LED1) - ЧИСТО РЕГИСТРЫ
+  17:Core/Src/init.c ****     *(volatile uint32_t*)(0x40000000U + 0x00010000U + 0x00000800U + 0x00000000U) = 
+  37              		.loc 1 17 5 view .LVU2
+  18:Core/Src/init.c ****         (*(volatile uint32_t*)(0x40000000U + 0x00010000U + 0x00000800U + 0x00000000U) & ~(0xF << 8)
+  38              		.loc 1 18 10 is_stmt 0 view .LVU3
+  39 000a 204B     		ldr	r3, .L2+4
+  40 000c D3F80028 		ldr	r2, [r3, #2048]
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s 			page 2
+
+
+  41              		.loc 1 18 87 view .LVU4
+  42 0010 22F47062 		bic	r2, r2, #3840
+  43              		.loc 1 18 102 view .LVU5
+  44 0014 42F44072 		orr	r2, r2, #768
+  17:Core/Src/init.c ****         (*(volatile uint32_t*)(0x40000000U + 0x00010000U + 0x00000800U + 0x00000000U) & ~(0xF << 8)
+  45              		.loc 1 17 82 view .LVU6
+  46 0018 C3F80028 		str	r2, [r3, #2048]
+  19:Core/Src/init.c ****     
+  20:Core/Src/init.c ****     // 3. Остальные пины через макросы
+  21:Core/Src/init.c ****     GPIOA_CRL = (GPIOA_CRL & GPIOA_MODE_PA5_MASK) | GPIOA_MODE_PA5_OUT;
+  47              		.loc 1 21 5 is_stmt 1 view .LVU7
+  48              		.loc 1 21 18 is_stmt 0 view .LVU8
+  49 001c D3F80028 		ldr	r2, [r3, #2048]
+  50              		.loc 1 21 28 view .LVU9
+  51 0020 22F47002 		bic	r2, r2, #15728640
+  52              		.loc 1 21 51 view .LVU10
+  53 0024 42F44012 		orr	r2, r2, #3145728
+  54              		.loc 1 21 15 view .LVU11
+  55 0028 C3F80028 		str	r2, [r3, #2048]
+  22:Core/Src/init.c ****     GPIOA_CRL = (GPIOA_CRL & GPIOA_MODE_PA6_MASK) | GPIOA_MODE_PA6_OUT;
+  56              		.loc 1 22 5 is_stmt 1 view .LVU12
+  57              		.loc 1 22 18 is_stmt 0 view .LVU13
+  58 002c D3F80028 		ldr	r2, [r3, #2048]
+  59              		.loc 1 22 28 view .LVU14
+  60 0030 22F07062 		bic	r2, r2, #251658240
+  61              		.loc 1 22 51 view .LVU15
+  62 0034 42F04072 		orr	r2, r2, #50331648
+  63              		.loc 1 22 15 view .LVU16
+  64 0038 C3F80028 		str	r2, [r3, #2048]
+  23:Core/Src/init.c ****     GPIOA_CRL = (GPIOA_CRL & GPIOA_MODE_PA3_MASK) | GPIOA_MODE_PA3_OUT;
+  65              		.loc 1 23 5 is_stmt 1 view .LVU17
+  66              		.loc 1 23 18 is_stmt 0 view .LVU18
+  67 003c D3F80028 		ldr	r2, [r3, #2048]
+  68              		.loc 1 23 28 view .LVU19
+  69 0040 22F47042 		bic	r2, r2, #61440
+  70              		.loc 1 23 51 view .LVU20
+  71 0044 42F44052 		orr	r2, r2, #12288
+  72              		.loc 1 23 15 view .LVU21
+  73 0048 C3F80028 		str	r2, [r3, #2048]
+  24:Core/Src/init.c ****     GPIOA_CRL = (GPIOA_CRL & GPIOA_MODE_PA0_MASK) | GPIOA_MODE_PA0_INPUT;
+  74              		.loc 1 24 5 is_stmt 1 view .LVU22
+  75              		.loc 1 24 18 is_stmt 0 view .LVU23
+  76 004c D3F80028 		ldr	r2, [r3, #2048]
+  77              		.loc 1 24 28 view .LVU24
+  78 0050 22F00F02 		bic	r2, r2, #15
+  79              		.loc 1 24 51 view .LVU25
+  80 0054 42F00802 		orr	r2, r2, #8
+  81              		.loc 1 24 15 view .LVU26
+  82 0058 C3F80028 		str	r2, [r3, #2048]
+  25:Core/Src/init.c ****     SET_BIT(GPIOA_ODR, GPIOA_PULLUP_PA0);
+  83              		.loc 1 25 5 is_stmt 1 view .LVU27
+  84 005c D3F80C28 		ldr	r2, [r3, #2060]
+  85 0060 42F00102 		orr	r2, r2, #1
+  86 0064 C3F80C28 		str	r2, [r3, #2060]
+  26:Core/Src/init.c ****     GPIOC_CRH = (GPIOC_CRH & GPIOC_MODE_PC14_MASK) | GPIOC_MODE_PC14_INPUT;
+  87              		.loc 1 26 5 view .LVU28
+  88              		.loc 1 26 18 is_stmt 0 view .LVU29
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s 			page 3
+
+
+  89 0068 0949     		ldr	r1, .L2+8
+  90 006a 4A68     		ldr	r2, [r1, #4]
+  91              		.loc 1 26 28 view .LVU30
+  92 006c 22F07062 		bic	r2, r2, #251658240
+  93              		.loc 1 26 52 view .LVU31
+  94 0070 42F00062 		orr	r2, r2, #134217728
+  95              		.loc 1 26 15 view .LVU32
+  96 0074 4A60     		str	r2, [r1, #4]
+  27:Core/Src/init.c ****     SET_BIT(GPIOC_ODR, GPIOC_PULLUP_PC14);
+  97              		.loc 1 27 5 is_stmt 1 view .LVU33
+  98 0076 CA68     		ldr	r2, [r1, #12]
+  99 0078 42F48042 		orr	r2, r2, #16384
+ 100 007c CA60     		str	r2, [r1, #12]
+  28:Core/Src/init.c ****     
+  29:Core/Src/init.c ****     // 4. Начальное состояние - все выключены
+  30:Core/Src/init.c ****     GPIOA_BSRR = GPIOA_BSRR_PA2_RESET | GPIOA_BSRR_PA5_RESET | 
+ 101              		.loc 1 30 5 view .LVU34
+ 102              		.loc 1 30 16 is_stmt 0 view .LVU35
+ 103 007e 4FF4D802 		mov	r2, #7077888
+ 104 0082 C3F81028 		str	r2, [r3, #2064]
+  31:Core/Src/init.c ****                  GPIOA_BSRR_PA6_RESET | GPIOA_BSRR_PA3_RESET;
+  32:Core/Src/init.c **** }
+ 105              		.loc 1 32 1 view .LVU36
+ 106 0086 7047     		bx	lr
+ 107              	.L3:
+ 108              		.align	2
+ 109              	.L2:
+ 110 0088 00100240 		.word	1073876992
+ 111 008c 00000140 		.word	1073807360
+ 112 0090 00100140 		.word	1073811456
+ 113              		.cfi_endproc
+ 114              	.LFE0:
+ 116              		.section	.text.delay,"ax",%progbits
+ 117              		.align	1
+ 118              		.global	delay
+ 119              		.syntax unified
+ 120              		.thumb
+ 121              		.thumb_func
+ 123              	delay:
+ 124              	.LVL0:
+ 125              	.LFB1:
+  33:Core/Src/init.c **** 
+  34:Core/Src/init.c **** void delay(uint32_t count) {
+ 126              		.loc 1 34 28 is_stmt 1 view -0
+ 127              		.cfi_startproc
+ 128              		@ args = 0, pretend = 0, frame = 8
+ 129              		@ frame_needed = 0, uses_anonymous_args = 0
+ 130              		@ link register save eliminated.
+ 131              		.loc 1 34 28 is_stmt 0 view .LVU38
+ 132 0000 82B0     		sub	sp, sp, #8
+ 133              	.LCFI0:
+ 134              		.cfi_def_cfa_offset 8
+  35:Core/Src/init.c ****     for(volatile uint32_t i = 0; i < count; i++);
+ 135              		.loc 1 35 5 is_stmt 1 view .LVU39
+ 136              	.LBB2:
+ 137              		.loc 1 35 9 view .LVU40
+ 138              		.loc 1 35 27 is_stmt 0 view .LVU41
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s 			page 4
+
+
+ 139 0002 0023     		movs	r3, #0
+ 140 0004 0193     		str	r3, [sp, #4]
+ 141              		.loc 1 35 5 view .LVU42
+ 142 0006 02E0     		b	.L5
+ 143              	.L6:
+ 144              		.loc 1 35 46 is_stmt 1 discriminator 3 view .LVU43
+ 145 0008 019B     		ldr	r3, [sp, #4]
+ 146 000a 0133     		adds	r3, r3, #1
+ 147 000c 0193     		str	r3, [sp, #4]
+ 148              	.L5:
+ 149              		.loc 1 35 36 discriminator 1 view .LVU44
+ 150 000e 019B     		ldr	r3, [sp, #4]
+ 151 0010 8342     		cmp	r3, r0
+ 152 0012 F9D3     		bcc	.L6
+ 153              	.LBE2:
+  36:Core/Src/init.c **** }
+ 154              		.loc 1 36 1 is_stmt 0 view .LVU45
+ 155 0014 02B0     		add	sp, sp, #8
+ 156              	.LCFI1:
+ 157              		.cfi_def_cfa_offset 0
+ 158              		@ sp needed
+ 159 0016 7047     		bx	lr
+ 160              		.cfi_endproc
+ 161              	.LFE1:
+ 163              		.section	.text.toggle_PA0_mode,"ax",%progbits
+ 164              		.align	1
+ 165              		.global	toggle_PA0_mode
+ 166              		.syntax unified
+ 167              		.thumb
+ 168              		.thumb_func
+ 170              	toggle_PA0_mode:
+ 171              	.LFB2:
+  37:Core/Src/init.c **** 
+  38:Core/Src/init.c **** void toggle_PA0_mode(void) {
+ 172              		.loc 1 38 28 is_stmt 1 view -0
+ 173              		.cfi_startproc
+ 174              		@ args = 0, pretend = 0, frame = 0
+ 175              		@ frame_needed = 0, uses_anonymous_args = 0
+ 176              		@ link register save eliminated.
+  39:Core/Src/init.c ****     if (pa0_mode == 0) {
+ 177              		.loc 1 39 5 view .LVU47
+ 178              		.loc 1 39 18 is_stmt 0 view .LVU48
+ 179 0000 124B     		ldr	r3, .L11
+ 180 0002 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 181              		.loc 1 39 8 view .LVU49
+ 182 0004 73B9     		cbnz	r3, .L9
+  40:Core/Src/init.c ****         GPIOA_CRL = (GPIOA_CRL & GPIOA_MODE_PA0_MASK) | GPIOA_MODE_PA0_OUTPUT;
+ 183              		.loc 1 40 9 is_stmt 1 view .LVU50
+ 184              		.loc 1 40 22 is_stmt 0 view .LVU51
+ 185 0006 124A     		ldr	r2, .L11+4
+ 186 0008 D2F80038 		ldr	r3, [r2, #2048]
+ 187              		.loc 1 40 32 view .LVU52
+ 188 000c 23F00F03 		bic	r3, r3, #15
+ 189              		.loc 1 40 55 view .LVU53
+ 190 0010 43F00303 		orr	r3, r3, #3
+ 191              		.loc 1 40 19 view .LVU54
+ 192 0014 C2F80038 		str	r3, [r2, #2048]
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s 			page 5
+
+
+  41:Core/Src/init.c ****         GPIOA_BSRR = GPIOA_PULLUP_PA0;
+ 193              		.loc 1 41 9 is_stmt 1 view .LVU55
+ 194              		.loc 1 41 20 is_stmt 0 view .LVU56
+ 195 0018 0123     		movs	r3, #1
+ 196 001a C2F81038 		str	r3, [r2, #2064]
+  42:Core/Src/init.c ****         pa0_mode = 1;
+ 197              		.loc 1 42 9 is_stmt 1 view .LVU57
+ 198              		.loc 1 42 18 is_stmt 0 view .LVU58
+ 199 001e 0B4A     		ldr	r2, .L11
+ 200 0020 1370     		strb	r3, [r2]
+ 201 0022 7047     		bx	lr
+ 202              	.L9:
+  43:Core/Src/init.c ****     } else {
+  44:Core/Src/init.c ****         GPIOA_CRL = (GPIOA_CRL & GPIOA_MODE_PA0_MASK) | GPIOA_MODE_PA0_INPUT;
+ 203              		.loc 1 44 9 is_stmt 1 view .LVU59
+ 204              		.loc 1 44 22 is_stmt 0 view .LVU60
+ 205 0024 0A4A     		ldr	r2, .L11+4
+ 206 0026 D2F80038 		ldr	r3, [r2, #2048]
+ 207              		.loc 1 44 32 view .LVU61
+ 208 002a 23F00F03 		bic	r3, r3, #15
+ 209              		.loc 1 44 55 view .LVU62
+ 210 002e 43F00803 		orr	r3, r3, #8
+ 211              		.loc 1 44 19 view .LVU63
+ 212 0032 C2F80038 		str	r3, [r2, #2048]
+  45:Core/Src/init.c ****         SET_BIT(GPIOA_ODR, GPIOA_PULLUP_PA0);
+ 213              		.loc 1 45 9 is_stmt 1 view .LVU64
+ 214 0036 D2F80C38 		ldr	r3, [r2, #2060]
+ 215 003a 43F00103 		orr	r3, r3, #1
+ 216 003e C2F80C38 		str	r3, [r2, #2060]
+  46:Core/Src/init.c ****         pa0_mode = 0;
+ 217              		.loc 1 46 9 view .LVU65
+ 218              		.loc 1 46 18 is_stmt 0 view .LVU66
+ 219 0042 024B     		ldr	r3, .L11
+ 220 0044 0022     		movs	r2, #0
+ 221 0046 1A70     		strb	r2, [r3]
+  47:Core/Src/init.c ****     }
+  48:Core/Src/init.c **** }
+ 222              		.loc 1 48 1 view .LVU67
+ 223 0048 7047     		bx	lr
+ 224              	.L12:
+ 225 004a 00BF     		.align	2
+ 226              	.L11:
+ 227 004c 00000000 		.word	pa0_mode
+ 228 0050 00000140 		.word	1073807360
+ 229              		.cfi_endproc
+ 230              	.LFE2:
+ 232              		.section	.text.update_buttons_state,"ax",%progbits
+ 233              		.align	1
+ 234              		.global	update_buttons_state
+ 235              		.syntax unified
+ 236              		.thumb
+ 237              		.thumb_func
+ 239              	update_buttons_state:
+ 240              	.LFB3:
+  49:Core/Src/init.c **** 
+  50:Core/Src/init.c **** // Функция обновления состояний кнопок и светодиодов
+  51:Core/Src/init.c **** void update_buttons_state(void) {
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s 			page 6
+
+
+ 241              		.loc 1 51 33 is_stmt 1 view -0
+ 242              		.cfi_startproc
+ 243              		@ args = 0, pretend = 0, frame = 0
+ 244              		@ frame_needed = 0, uses_anonymous_args = 0
+ 245              		@ link register save eliminated.
+  52:Core/Src/init.c ****     // Обновляем состояния кнопок
+  53:Core/Src/init.c ****     button1_state = (READ_BIT(GPIOA_IDR, GPIOA_IDR_PA0) == 0) ? 1 : 0;
+ 246              		.loc 1 53 5 view .LVU69
+ 247              		.loc 1 53 22 is_stmt 0 view .LVU70
+ 248 0000 154B     		ldr	r3, .L14
+ 249 0002 D3F80828 		ldr	r2, [r3, #2056]
+ 250              		.loc 1 53 67 view .LVU71
+ 251 0006 12F0010F 		tst	r2, #1
+ 252 000a 0CBF     		ite	eq
+ 253 000c 0121     		moveq	r1, #1
+ 254 000e 0021     		movne	r1, #0
+ 255              		.loc 1 53 19 view .LVU72
+ 256 0010 124A     		ldr	r2, .L14+4
+ 257 0012 1170     		strb	r1, [r2]
+  54:Core/Src/init.c ****     button2_state = (READ_BIT(GPIOC_IDR, GPIOC_IDR_PC14) == 0) ? 1 : 0;
+ 258              		.loc 1 54 5 is_stmt 1 view .LVU73
+ 259              		.loc 1 54 22 is_stmt 0 view .LVU74
+ 260 0014 124A     		ldr	r2, .L14+8
+ 261 0016 9268     		ldr	r2, [r2, #8]
+ 262              		.loc 1 54 68 view .LVU75
+ 263 0018 12F4804F 		tst	r2, #16384
+ 264 001c 0CBF     		ite	eq
+ 265 001e 0121     		moveq	r1, #1
+ 266 0020 0021     		movne	r1, #0
+ 267              		.loc 1 54 19 view .LVU76
+ 268 0022 104A     		ldr	r2, .L14+12
+ 269 0024 1170     		strb	r1, [r2]
+  55:Core/Src/init.c ****     
+  56:Core/Src/init.c ****     // Обновляем состояния светодиодов (читаем из ODR)
+  57:Core/Src/init.c ****     led1_state = (READ_BIT(GPIOA_ODR, GPIOA_BSRR_PA2_SET) != 0) ? 1 : 0;
+ 270              		.loc 1 57 5 is_stmt 1 view .LVU77
+ 271              		.loc 1 57 19 is_stmt 0 view .LVU78
+ 272 0026 D3F80C28 		ldr	r2, [r3, #2060]
+ 273              		.loc 1 57 69 view .LVU79
+ 274 002a C2F38002 		ubfx	r2, r2, #2, #1
+ 275              		.loc 1 57 16 view .LVU80
+ 276 002e 0E49     		ldr	r1, .L14+16
+ 277 0030 0A70     		strb	r2, [r1]
+  58:Core/Src/init.c ****     led2_state = (READ_BIT(GPIOA_ODR, GPIOA_BSRR_PA5_SET) != 0) ? 1 : 0;
+ 278              		.loc 1 58 5 is_stmt 1 view .LVU81
+ 279              		.loc 1 58 19 is_stmt 0 view .LVU82
+ 280 0032 D3F80C28 		ldr	r2, [r3, #2060]
+ 281              		.loc 1 58 69 view .LVU83
+ 282 0036 C2F34012 		ubfx	r2, r2, #5, #1
+ 283              		.loc 1 58 16 view .LVU84
+ 284 003a 0C49     		ldr	r1, .L14+20
+ 285 003c 0A70     		strb	r2, [r1]
+  59:Core/Src/init.c ****     led3_state = (READ_BIT(GPIOA_ODR, GPIOA_BSRR_PA6_SET) != 0) ? 1 : 0;
+ 286              		.loc 1 59 5 is_stmt 1 view .LVU85
+ 287              		.loc 1 59 19 is_stmt 0 view .LVU86
+ 288 003e D3F80C28 		ldr	r2, [r3, #2060]
+ 289              		.loc 1 59 69 view .LVU87
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s 			page 7
+
+
+ 290 0042 C2F38012 		ubfx	r2, r2, #6, #1
+ 291              		.loc 1 59 16 view .LVU88
+ 292 0046 0A49     		ldr	r1, .L14+24
+ 293 0048 0A70     		strb	r2, [r1]
+  60:Core/Src/init.c ****     led4_state = (READ_BIT(GPIOA_ODR, GPIOA_BSRR_PA3_SET) != 0) ? 1 : 0;
+ 294              		.loc 1 60 5 is_stmt 1 view .LVU89
+ 295              		.loc 1 60 19 is_stmt 0 view .LVU90
+ 296 004a D3F80C38 		ldr	r3, [r3, #2060]
+ 297              		.loc 1 60 69 view .LVU91
+ 298 004e C3F3C003 		ubfx	r3, r3, #3, #1
+ 299              		.loc 1 60 16 view .LVU92
+ 300 0052 084A     		ldr	r2, .L14+28
+ 301 0054 1370     		strb	r3, [r2]
+  61:Core/Src/init.c **** }...
+ 302              		.loc 1 61 1 view .LVU93
+ 303 0056 7047     		bx	lr
+ 304              	.L15:
+ 305              		.align	2
+ 306              	.L14:
+ 307 0058 00000140 		.word	1073807360
+ 308 005c 00000000 		.word	button1_state
+ 309 0060 00100140 		.word	1073811456
+ 310 0064 00000000 		.word	button2_state
+ 311 0068 00000000 		.word	led1_state
+ 312 006c 00000000 		.word	led2_state
+ 313 0070 00000000 		.word	led3_state
+ 314 0074 00000000 		.word	led4_state
+ 315              		.cfi_endproc
+ 316              	.LFE3:
+ 318              		.global	led4_state
+ 319              		.section	.bss.led4_state,"aw",%nobits
+ 322              	led4_state:
+ 323 0000 00       		.space	1
+ 324              		.global	led3_state
+ 325              		.section	.bss.led3_state,"aw",%nobits
+ 328              	led3_state:
+ 329 0000 00       		.space	1
+ 330              		.global	led2_state
+ 331              		.section	.bss.led2_state,"aw",%nobits
+ 334              	led2_state:
+ 335 0000 00       		.space	1
+ 336              		.global	led1_state
+ 337              		.section	.bss.led1_state,"aw",%nobits
+ 340              	led1_state:
+ 341 0000 00       		.space	1
+ 342              		.global	button2_state
+ 343              		.section	.bss.button2_state,"aw",%nobits
+ 346              	button2_state:
+ 347 0000 00       		.space	1
+ 348              		.global	button1_state
+ 349              		.section	.bss.button1_state,"aw",%nobits
+ 352              	button1_state:
+ 353 0000 00       		.space	1
+ 354              		.global	pa0_mode
+ 355              		.section	.bss.pa0_mode,"aw",%nobits
+ 358              	pa0_mode:
+ 359 0000 00       		.space	1
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s 			page 8
+
+
+ 360              		.text
+ 361              	.Letext0:
+ 362              		.file 2 "D:/Programs/Education/STM32/Tools/Xpack/arm-none-eabi/include/machine/_default_types.h"
+ 363              		.file 3 "D:/Programs/Education/STM32/Tools/Xpack/arm-none-eabi/include/sys/_stdint.h"
+ 364              		.file 4 "Core/Inc/init.h"
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s 			page 9
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 init.c
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:19     .text.GPIO_Init:00000000 $t
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:25     .text.GPIO_Init:00000000 GPIO_Init
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:110    .text.GPIO_Init:00000088 $d
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:117    .text.delay:00000000 $t
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:123    .text.delay:00000000 delay
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:164    .text.toggle_PA0_mode:00000000 $t
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:170    .text.toggle_PA0_mode:00000000 toggle_PA0_mode
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:227    .text.toggle_PA0_mode:0000004c $d
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:358    .bss.pa0_mode:00000000 pa0_mode
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:233    .text.update_buttons_state:00000000 $t
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:239    .text.update_buttons_state:00000000 update_buttons_state
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:307    .text.update_buttons_state:00000058 $d
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:352    .bss.button1_state:00000000 button1_state
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:346    .bss.button2_state:00000000 button2_state
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:340    .bss.led1_state:00000000 led1_state
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:334    .bss.led2_state:00000000 led2_state
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:328    .bss.led3_state:00000000 led3_state
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:322    .bss.led4_state:00000000 led4_state
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:323    .bss.led4_state:00000000 $d
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:329    .bss.led3_state:00000000 $d
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:335    .bss.led2_state:00000000 $d
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:341    .bss.led1_state:00000000 $d
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:347    .bss.button2_state:00000000 $d
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:353    .bss.button1_state:00000000 $d
+C:\Users\Dmitriy\AppData\Local\Temp\cchWAnCa.s:359    .bss.pa0_mode:00000000 $d
+
+NO UNDEFINED SYMBOLS

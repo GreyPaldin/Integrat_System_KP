@@ -1,0 +1,2660 @@
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"main.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "Core/Src/main.c"
+  18              		.global	__aeabi_fmul
+  19              		.global	__aeabi_fsub
+  20              		.global	__aeabi_fadd
+  21              		.global	__aeabi_fcmpgt
+  22              		.global	__aeabi_fcmplt
+  23              		.section	.text.TIM2_IRQHandler,"ax",%progbits
+  24              		.align	1
+  25              		.global	TIM2_IRQHandler
+  26              		.syntax unified
+  27              		.thumb
+  28              		.thumb_func
+  30              	TIM2_IRQHandler:
+  31              	.LFB65:
+   1:Core/Src/main.c **** #include "stm32f103xb.h"
+   2:Core/Src/main.c **** #include "config.h"
+   3:Core/Src/main.c **** 
+   4:Core/Src/main.c **** void Clock_Config_72MHz(void);
+   5:Core/Src/main.c **** void Timer2_Init_1200Hz(void);
+   6:Core/Src/main.c **** 
+   7:Core/Src/main.c **** volatile float Y1_st = 0, Y2_st = 0, Y4_st = 0; 
+   8:Core/Src/main.c **** volatile float current_x1 = 0;
+   9:Core/Src/main.c **** volatile uint8_t system_fault = 0;        // Флаг перманентной блокировки
+  10:Core/Src/main.c **** 
+  11:Core/Src/main.c **** float i_term1 = 0, i_term2 = 0;
+  12:Core/Src/main.c **** 
+  13:Core/Src/main.c **** void TIM2_IRQHandler(void) {
+  32              		.loc 1 13 28 view -0
+  33              		.cfi_startproc
+  34              		@ args = 0, pretend = 0, frame = 0
+  35              		@ frame_needed = 0, uses_anonymous_args = 0
+  36 0000 38B5     		push	{r3, r4, r5, lr}
+  37              	.LCFI0:
+  38              		.cfi_def_cfa_offset 16
+  39              		.cfi_offset 3, -16
+  40              		.cfi_offset 4, -12
+  41              		.cfi_offset 5, -8
+  42              		.cfi_offset 14, -4
+  14:Core/Src/main.c ****     if (TIM2->SR & TIM_SR_UIF) {
+  43              		.loc 1 14 5 view .LVU1
+  44              		.loc 1 14 13 is_stmt 0 view .LVU2
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 2
+
+
+  45 0002 4FF08043 		mov	r3, #1073741824
+  46 0006 1B69     		ldr	r3, [r3, #16]
+  47              		.loc 1 14 8 view .LVU3
+  48 0008 13F0010F 		tst	r3, #1
+  49 000c 00F09080 		beq	.L1
+  50              	.LBB6:
+  15:Core/Src/main.c ****         TIM2->SR &= ~TIM_SR_UIF;
+  51              		.loc 1 15 9 is_stmt 1 view .LVU4
+  52              		.loc 1 15 13 is_stmt 0 view .LVU5
+  53 0010 4FF08042 		mov	r2, #1073741824
+  54 0014 1369     		ldr	r3, [r2, #16]
+  55              		.loc 1 15 18 view .LVU6
+  56 0016 23F00103 		bic	r3, r3, #1
+  57 001a 1361     		str	r3, [r2, #16]
+  16:Core/Src/main.c **** 
+  17:Core/Src/main.c ****         // 1. ОГРАНИЧЕНИЕ УСТАВКИ (Защита ввода)
+  18:Core/Src/main.c ****         float safe_target = U_SET_USER;
+  58              		.loc 1 18 9 is_stmt 1 view .LVU7
+  59              	.LVL0:
+  19:Core/Src/main.c ****         if (safe_target > U_SET_LIMIT)  safe_target = U_SET_LIMIT;
+  60              		.loc 1 19 9 view .LVU8
+  20:Core/Src/main.c ****         if (safe_target < -U_SET_LIMIT) safe_target = -U_SET_LIMIT;
+  61              		.loc 1 20 9 view .LVU9
+  21:Core/Src/main.c **** 
+  22:Core/Src/main.c ****         // 2. ПЕРМАНЕНТНАЯ БЛОКИРОВКА (Если была авария)
+  23:Core/Src/main.c ****         if (system_fault != 0) {
+  62              		.loc 1 23 9 view .LVU10
+  63              		.loc 1 23 26 is_stmt 0 view .LVU11
+  64 001c 454B     		ldr	r3, .L26
+  65 001e 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  66              		.loc 1 23 12 view .LVU12
+  67 0020 002B     		cmp	r3, #0
+  68 0022 3CD1     		bne	.L16
+  69 0024 4FF08044 		mov	r4, #1073741824
+  70              	.L3:
+  71              	.LVL1:
+  24:Core/Src/main.c ****             safe_target = 0.0f;
+  25:Core/Src/main.c ****         }
+  26:Core/Src/main.c **** 
+  27:Core/Src/main.c ****         // 3. ВНЕШНИЙ КОНТУР (Скорость)
+  28:Core/Src/main.c ****         float feedback_v4 = Y4_st * K_OC;
+  72              		.loc 1 28 9 is_stmt 1 view .LVU13
+  73              		.loc 1 28 35 is_stmt 0 view .LVU14
+  74 0028 434B     		ldr	r3, .L26+4
+  75 002a 1868     		ldr	r0, [r3]	@ float
+  76              		.loc 1 28 15 view .LVU15
+  77 002c 4349     		ldr	r1, .L26+8
+  78 002e FFF7FEFF 		bl	__aeabi_fmul
+  79              	.LVL2:
+  80 0032 0146     		mov	r1, r0
+  81              	.LVL3:
+  29:Core/Src/main.c ****         float err2 = safe_target - feedback_v4;
+  82              		.loc 1 29 9 is_stmt 1 view .LVU16
+  83              		.loc 1 29 15 is_stmt 0 view .LVU17
+  84 0034 2046     		mov	r0, r4
+  85              	.LVL4:
+  86              		.loc 1 29 15 view .LVU18
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 3
+
+
+  87 0036 FFF7FEFF 		bl	__aeabi_fsub
+  88              	.LVL5:
+  89              		.loc 1 29 15 view .LVU19
+  90 003a 0446     		mov	r4, r0
+  91              	.LVL6:
+  30:Core/Src/main.c ****         i_term2 += err2 * REG_TS;
+  92              		.loc 1 30 9 is_stmt 1 view .LVU20
+  93              		.loc 1 30 25 is_stmt 0 view .LVU21
+  94 003c 4049     		ldr	r1, .L26+12
+  95 003e FFF7FEFF 		bl	__aeabi_fmul
+  96              	.LVL7:
+  97              		.loc 1 30 17 view .LVU22
+  98 0042 404D     		ldr	r5, .L26+16
+  99 0044 2968     		ldr	r1, [r5]	@ float
+ 100 0046 FFF7FEFF 		bl	__aeabi_fadd
+ 101              	.LVL8:
+ 102 004a 2860     		str	r0, [r5]	@ float
+  31:Core/Src/main.c ****         
+  32:Core/Src/main.c ****         if (i_term2 > I_TERM_LIMIT) i_term2 = I_TERM_LIMIT;
+ 103              		.loc 1 32 9 is_stmt 1 view .LVU23
+ 104              		.loc 1 32 12 is_stmt 0 view .LVU24
+ 105 004c 3E49     		ldr	r1, .L26+20
+ 106 004e FFF7FEFF 		bl	__aeabi_fcmpgt
+ 107              	.LVL9:
+ 108 0052 08B1     		cbz	r0, .L4
+ 109              		.loc 1 32 37 is_stmt 1 discriminator 1 view .LVU25
+ 110              		.loc 1 32 45 is_stmt 0 discriminator 1 view .LVU26
+ 111 0054 3C4A     		ldr	r2, .L26+20
+ 112 0056 2A60     		str	r2, [r5]	@ float
+ 113              	.L4:
+  33:Core/Src/main.c ****         if (i_term2 < -I_TERM_LIMIT) i_term2 = -I_TERM_LIMIT;
+ 114              		.loc 1 33 9 is_stmt 1 view .LVU27
+ 115              		.loc 1 33 12 is_stmt 0 view .LVU28
+ 116 0058 3C49     		ldr	r1, .L26+24
+ 117 005a 3A4B     		ldr	r3, .L26+16
+ 118 005c 1868     		ldr	r0, [r3]	@ float
+ 119 005e FFF7FEFF 		bl	__aeabi_fcmplt
+ 120              	.LVL10:
+ 121 0062 10B1     		cbz	r0, .L6
+ 122              		.loc 1 33 38 is_stmt 1 discriminator 1 view .LVU29
+ 123              		.loc 1 33 46 is_stmt 0 discriminator 1 view .LVU30
+ 124 0064 374B     		ldr	r3, .L26+16
+ 125 0066 394A     		ldr	r2, .L26+24
+ 126 0068 1A60     		str	r2, [r3]	@ float
+ 127              	.L6:
+  34:Core/Src/main.c **** 
+  35:Core/Src/main.c ****         float x1_ref = (KP2 * err2) + (KI2 * i_term2);
+ 128              		.loc 1 35 9 is_stmt 1 view .LVU31
+ 129              		.loc 1 35 29 is_stmt 0 view .LVU32
+ 130 006a 3949     		ldr	r1, .L26+28
+ 131 006c 2046     		mov	r0, r4
+ 132 006e FFF7FEFF 		bl	__aeabi_fmul
+ 133              	.LVL11:
+ 134 0072 0446     		mov	r4, r0
+ 135              	.LVL12:
+ 136              		.loc 1 35 44 view .LVU33
+ 137 0074 3749     		ldr	r1, .L26+32
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 4
+
+
+ 138 0076 334B     		ldr	r3, .L26+16
+ 139 0078 1868     		ldr	r0, [r3]	@ float
+ 140 007a FFF7FEFF 		bl	__aeabi_fmul
+ 141              	.LVL13:
+ 142 007e 0146     		mov	r1, r0
+ 143              		.loc 1 35 15 view .LVU34
+ 144 0080 2046     		mov	r0, r4
+ 145 0082 FFF7FEFF 		bl	__aeabi_fadd
+ 146              	.LVL14:
+ 147 0086 0446     		mov	r4, r0
+ 148              	.LVL15:
+  36:Core/Src/main.c ****         
+  37:Core/Src/main.c ****         if (x1_ref > 10.0f) x1_ref = 10.0f;
+ 149              		.loc 1 37 9 is_stmt 1 view .LVU35
+ 150              		.loc 1 37 12 is_stmt 0 view .LVU36
+ 151 0088 3349     		ldr	r1, .L26+36
+ 152 008a FFF7FEFF 		bl	__aeabi_fcmpgt
+ 153              	.LVL16:
+ 154              		.loc 1 37 12 view .LVU37
+ 155 008e 40B9     		cbnz	r0, .L17
+  38:Core/Src/main.c ****         if (x1_ref < -10.0f) x1_ref = -10.0f;
+ 156              		.loc 1 38 9 is_stmt 1 view .LVU38
+ 157              		.loc 1 38 12 is_stmt 0 view .LVU39
+ 158 0090 3249     		ldr	r1, .L26+40
+ 159 0092 2046     		mov	r0, r4
+ 160 0094 FFF7FEFF 		bl	__aeabi_fcmplt
+ 161              	.LVL17:
+ 162 0098 20B1     		cbz	r0, .L8
+ 163              		.loc 1 38 37 discriminator 1 view .LVU40
+ 164 009a 304C     		ldr	r4, .L26+40
+ 165              	.LVL18:
+ 166              		.loc 1 38 37 discriminator 1 view .LVU41
+ 167 009c 02E0     		b	.L8
+ 168              	.LVL19:
+ 169              	.L16:
+  24:Core/Src/main.c ****         }
+ 170              		.loc 1 24 25 view .LVU42
+ 171 009e 0024     		movs	r4, #0
+ 172 00a0 C2E7     		b	.L3
+ 173              	.LVL20:
+ 174              	.L17:
+  37:Core/Src/main.c ****         if (x1_ref < -10.0f) x1_ref = -10.0f;
+ 175              		.loc 1 37 36 discriminator 1 view .LVU43
+ 176 00a2 2D4C     		ldr	r4, .L26+36
+ 177              	.LVL21:
+ 178              	.L8:
+  39:Core/Src/main.c **** 
+  40:Core/Src/main.c ****         // 4. ВНУТРЕННИЙ КОНТУР (Ток)
+  41:Core/Src/main.c ****         float feedback_v2 = Y2_st * (2.0f / 1000.0f);
+ 179              		.loc 1 41 9 is_stmt 1 view .LVU44
+ 180              		.loc 1 41 35 is_stmt 0 view .LVU45
+ 181 00a4 2E4B     		ldr	r3, .L26+44
+ 182 00a6 1868     		ldr	r0, [r3]	@ float
+ 183              		.loc 1 41 15 view .LVU46
+ 184 00a8 2E49     		ldr	r1, .L26+48
+ 185 00aa FFF7FEFF 		bl	__aeabi_fmul
+ 186              	.LVL22:
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 5
+
+
+ 187 00ae 0146     		mov	r1, r0
+ 188              	.LVL23:
+  42:Core/Src/main.c ****         float err1 = x1_ref - feedback_v2;
+ 189              		.loc 1 42 9 is_stmt 1 view .LVU47
+ 190              		.loc 1 42 15 is_stmt 0 view .LVU48
+ 191 00b0 2046     		mov	r0, r4
+ 192              	.LVL24:
+ 193              		.loc 1 42 15 view .LVU49
+ 194 00b2 FFF7FEFF 		bl	__aeabi_fsub
+ 195              	.LVL25:
+ 196              		.loc 1 42 15 view .LVU50
+ 197 00b6 0446     		mov	r4, r0
+ 198              	.LVL26:
+  43:Core/Src/main.c ****         i_term1 += err1 * REG_TS;
+ 199              		.loc 1 43 9 is_stmt 1 view .LVU51
+ 200              		.loc 1 43 25 is_stmt 0 view .LVU52
+ 201 00b8 2149     		ldr	r1, .L26+12
+ 202 00ba FFF7FEFF 		bl	__aeabi_fmul
+ 203              	.LVL27:
+ 204              		.loc 1 43 17 view .LVU53
+ 205 00be 2A4D     		ldr	r5, .L26+52
+ 206 00c0 2968     		ldr	r1, [r5]	@ float
+ 207 00c2 FFF7FEFF 		bl	__aeabi_fadd
+ 208              	.LVL28:
+ 209 00c6 2860     		str	r0, [r5]	@ float
+  44:Core/Src/main.c ****         
+  45:Core/Src/main.c ****         if (i_term1 > I_TERM_LIMIT) i_term1 = I_TERM_LIMIT;
+ 210              		.loc 1 45 9 is_stmt 1 view .LVU54
+ 211              		.loc 1 45 12 is_stmt 0 view .LVU55
+ 212 00c8 1F49     		ldr	r1, .L26+20
+ 213 00ca FFF7FEFF 		bl	__aeabi_fcmpgt
+ 214              	.LVL29:
+ 215 00ce 08B1     		cbz	r0, .L9
+ 216              		.loc 1 45 37 is_stmt 1 discriminator 1 view .LVU56
+ 217              		.loc 1 45 45 is_stmt 0 discriminator 1 view .LVU57
+ 218 00d0 1D4A     		ldr	r2, .L26+20
+ 219 00d2 2A60     		str	r2, [r5]	@ float
+ 220              	.L9:
+  46:Core/Src/main.c ****         if (i_term1 < -I_TERM_LIMIT) i_term1 = -I_TERM_LIMIT;
+ 221              		.loc 1 46 9 is_stmt 1 view .LVU58
+ 222              		.loc 1 46 12 is_stmt 0 view .LVU59
+ 223 00d4 1D49     		ldr	r1, .L26+24
+ 224 00d6 244B     		ldr	r3, .L26+52
+ 225 00d8 1868     		ldr	r0, [r3]	@ float
+ 226 00da FFF7FEFF 		bl	__aeabi_fcmplt
+ 227              	.LVL30:
+ 228 00de 10B1     		cbz	r0, .L11
+ 229              		.loc 1 46 38 is_stmt 1 discriminator 1 view .LVU60
+ 230              		.loc 1 46 46 is_stmt 0 discriminator 1 view .LVU61
+ 231 00e0 214B     		ldr	r3, .L26+52
+ 232 00e2 1A4A     		ldr	r2, .L26+24
+ 233 00e4 1A60     		str	r2, [r3]	@ float
+ 234              	.L11:
+  47:Core/Src/main.c **** 
+  48:Core/Src/main.c ****         current_x1 = (KP1 * err1) + (KI1 * i_term1);
+ 235              		.loc 1 48 9 is_stmt 1 view .LVU62
+ 236              		.loc 1 48 27 is_stmt 0 view .LVU63
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 6
+
+
+ 237 00e6 2149     		ldr	r1, .L26+56
+ 238 00e8 2046     		mov	r0, r4
+ 239 00ea FFF7FEFF 		bl	__aeabi_fmul
+ 240              	.LVL31:
+ 241 00ee 0446     		mov	r4, r0
+ 242              	.LVL32:
+ 243              		.loc 1 48 42 view .LVU64
+ 244 00f0 1F49     		ldr	r1, .L26+60
+ 245 00f2 1D4B     		ldr	r3, .L26+52
+ 246 00f4 1868     		ldr	r0, [r3]	@ float
+ 247 00f6 FFF7FEFF 		bl	__aeabi_fmul
+ 248              	.LVL33:
+ 249 00fa 0146     		mov	r1, r0
+ 250              		.loc 1 48 35 view .LVU65
+ 251 00fc 2046     		mov	r0, r4
+ 252 00fe FFF7FEFF 		bl	__aeabi_fadd
+ 253              	.LVL34:
+ 254              		.loc 1 48 20 view .LVU66
+ 255 0102 1C4B     		ldr	r3, .L26+64
+ 256 0104 1860     		str	r0, [r3]	@ float
+  49:Core/Src/main.c ****         
+  50:Core/Src/main.c ****         if (current_x1 > 2.0f)  current_x1 = 2.0f;
+ 257              		.loc 1 50 9 is_stmt 1 view .LVU67
+ 258              		.loc 1 50 24 is_stmt 0 view .LVU68
+ 259 0106 1868     		ldr	r0, [r3]	@ float
+ 260              		.loc 1 50 12 view .LVU69
+ 261 0108 4FF08041 		mov	r1, #1073741824
+ 262 010c FFF7FEFF 		bl	__aeabi_fcmpgt
+ 263              	.LVL35:
+ 264 0110 18B1     		cbz	r0, .L13
+ 265              		.loc 1 50 33 is_stmt 1 discriminator 1 view .LVU70
+ 266              		.loc 1 50 44 is_stmt 0 discriminator 1 view .LVU71
+ 267 0112 184B     		ldr	r3, .L26+64
+ 268 0114 4FF08042 		mov	r2, #1073741824
+ 269 0118 1A60     		str	r2, [r3]	@ float
+ 270              	.L13:
+  51:Core/Src/main.c ****         if (current_x1 < -2.0f) current_x1 = -2.0f;
+ 271              		.loc 1 51 9 is_stmt 1 view .LVU72
+ 272              		.loc 1 51 24 is_stmt 0 view .LVU73
+ 273 011a 164B     		ldr	r3, .L26+64
+ 274 011c 1868     		ldr	r0, [r3]	@ float
+ 275              		.loc 1 51 12 view .LVU74
+ 276 011e 4FF04041 		mov	r1, #-1073741824
+ 277 0122 FFF7FEFF 		bl	__aeabi_fcmplt
+ 278              	.LVL36:
+ 279 0126 18B1     		cbz	r0, .L1
+ 280              		.loc 1 51 33 is_stmt 1 discriminator 1 view .LVU75
+ 281              		.loc 1 51 44 is_stmt 0 discriminator 1 view .LVU76
+ 282 0128 124B     		ldr	r3, .L26+64
+ 283 012a 4FF04042 		mov	r2, #-1073741824
+ 284 012e 1A60     		str	r2, [r3]	@ float
+ 285              	.LVL37:
+ 286              	.L1:
+ 287              		.loc 1 51 44 discriminator 1 view .LVU77
+ 288              	.LBE6:
+  52:Core/Src/main.c ****     }
+  53:Core/Src/main.c **** }
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 7
+
+
+ 289              		.loc 1 53 1 view .LVU78
+ 290 0130 38BD     		pop	{r3, r4, r5, pc}
+ 291              	.L27:
+ 292 0132 00BF     		.align	2
+ 293              	.L26:
+ 294 0134 00000000 		.word	system_fault
+ 295 0138 00000000 		.word	Y4_st
+ 296 013c 3EC32E3A 		.word	976143166
+ 297 0140 0E745A3A 		.word	979006478
+ 298 0144 00000000 		.word	i_term2
+ 299 0148 00007041 		.word	1097859072
+ 300 014c 000070C1 		.word	-1049624576
+ 301 0150 00001C45 		.word	1159462912
+ 302 0154 008EB446 		.word	1186237952
+ 303 0158 00002041 		.word	1092616192
+ 304 015c 000020C1 		.word	-1054867456
+ 305 0160 00000000 		.word	Y2_st
+ 306 0164 6F12033B 		.word	990057071
+ 307 0168 00000000 		.word	i_term1
+ 308 016c 58CAB23E 		.word	1051904600
+ 309 0170 FCA9D540 		.word	1087744508
+ 310 0174 00000000 		.word	current_x1
+ 311              		.cfi_endproc
+ 312              	.LFE65:
+ 314              		.section	.text.Clock_Config_72MHz,"ax",%progbits
+ 315              		.align	1
+ 316              		.global	Clock_Config_72MHz
+ 317              		.syntax unified
+ 318              		.thumb
+ 319              		.thumb_func
+ 321              	Clock_Config_72MHz:
+ 322              	.LFB67:
+  54:Core/Src/main.c **** 
+  55:Core/Src/main.c **** int main(void) {
+  56:Core/Src/main.c ****     Clock_Config_72MHz(); 
+  57:Core/Src/main.c ****     Timer2_Init_1200Hz();
+  58:Core/Src/main.c **** 
+  59:Core/Src/main.c ****     const float invT1 = 1.0f / T1;
+  60:Core/Src/main.c ****     const float invT2 = 1.0f / T2;
+  61:Core/Src/main.c ****     const float invT4 = 1.0f / T4;
+  62:Core/Src/main.c ****     const float dt = SIM_DT_FAST;
+  63:Core/Src/main.c **** 
+  64:Core/Src/main.c ****     while(1) {
+  65:Core/Src/main.c ****         float u_in = current_x1 * GAIN_FIX;
+  66:Core/Src/main.c **** 
+  67:Core/Src/main.c ****         // Модель объекта
+  68:Core/Src/main.c ****         Y1_st += (K1 * u_in - Y1_st) * invT1 * dt;
+  69:Core/Src/main.c ****         Y2_st += (K3 * Y1_st - Y2_st) * invT2 * dt;
+  70:Core/Src/main.c ****         Y4_st += (K4 * Y2_st - Y4_st) * invT4 * dt;
+  71:Core/Src/main.c **** 
+  72:Core/Src/main.c ****         // ЗАЩИТЫ (Срабатывают при превышении в любую стор�
+  73:Core/Src/main.c ****         if (Y4_st > SPEED_LIMIT || Y4_st < -SPEED_LIMIT || Y2_st > Y2_LIMIT || Y2_st < -Y2_LIMIT) {
+  74:Core/Src/main.c ****             system_fault = 1; 
+  75:Core/Src/main.c ****         }
+  76:Core/Src/main.c ****     }
+  77:Core/Src/main.c **** }
+  78:Core/Src/main.c **** // --- Конфигурирование МК ---
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 8
+
+
+  79:Core/Src/main.c **** void Clock_Config_72MHz(void) {
+ 323              		.loc 1 79 31 is_stmt 1 view -0
+ 324              		.cfi_startproc
+ 325              		@ args = 0, pretend = 0, frame = 0
+ 326              		@ frame_needed = 0, uses_anonymous_args = 0
+ 327              		@ link register save eliminated.
+  80:Core/Src/main.c ****     RCC->CR |= RCC_CR_HSEON;
+ 328              		.loc 1 80 5 view .LVU80
+ 329              		.loc 1 80 8 is_stmt 0 view .LVU81
+ 330 0000 144A     		ldr	r2, .L32
+ 331 0002 1368     		ldr	r3, [r2]
+ 332              		.loc 1 80 13 view .LVU82
+ 333 0004 43F48033 		orr	r3, r3, #65536
+ 334 0008 1360     		str	r3, [r2]
+  81:Core/Src/main.c ****     while (!(RCC->CR & RCC_CR_HSERDY));
+ 335              		.loc 1 81 5 is_stmt 1 view .LVU83
+ 336              	.L29:
+ 337              		.loc 1 81 12 discriminator 1 view .LVU84
+ 338              		.loc 1 81 17 is_stmt 0 discriminator 1 view .LVU85
+ 339 000a 124B     		ldr	r3, .L32
+ 340 000c 1B68     		ldr	r3, [r3]
+ 341              		.loc 1 81 12 discriminator 1 view .LVU86
+ 342 000e 13F4003F 		tst	r3, #131072
+ 343 0012 FAD0     		beq	.L29
+  82:Core/Src/main.c ****     FLASH->ACR |= FLASH_ACR_LATENCY_2;
+ 344              		.loc 1 82 5 is_stmt 1 view .LVU87
+ 345              		.loc 1 82 10 is_stmt 0 view .LVU88
+ 346 0014 104A     		ldr	r2, .L32+4
+ 347 0016 1368     		ldr	r3, [r2]
+ 348              		.loc 1 82 16 view .LVU89
+ 349 0018 43F00403 		orr	r3, r3, #4
+ 350 001c 1360     		str	r3, [r2]
+  83:Core/Src/main.c ****     RCC->CFGR |= (RCC_CFGR_PLLSRC | RCC_CFGR_PLLMULL9);
+ 351              		.loc 1 83 5 is_stmt 1 view .LVU90
+ 352              		.loc 1 83 8 is_stmt 0 view .LVU91
+ 353 001e 0D4B     		ldr	r3, .L32
+ 354 0020 5A68     		ldr	r2, [r3, #4]
+ 355              		.loc 1 83 15 view .LVU92
+ 356 0022 42F4E812 		orr	r2, r2, #1900544
+ 357 0026 5A60     		str	r2, [r3, #4]
+  84:Core/Src/main.c ****     RCC->CR |= RCC_CR_PLLON;
+ 358              		.loc 1 84 5 is_stmt 1 view .LVU93
+ 359              		.loc 1 84 8 is_stmt 0 view .LVU94
+ 360 0028 1A68     		ldr	r2, [r3]
+ 361              		.loc 1 84 13 view .LVU95
+ 362 002a 42F08072 		orr	r2, r2, #16777216
+ 363 002e 1A60     		str	r2, [r3]
+  85:Core/Src/main.c ****     while (!(RCC->CR & RCC_CR_PLLRDY));
+ 364              		.loc 1 85 5 is_stmt 1 view .LVU96
+ 365              	.L30:
+ 366              		.loc 1 85 12 discriminator 1 view .LVU97
+ 367              		.loc 1 85 17 is_stmt 0 discriminator 1 view .LVU98
+ 368 0030 084B     		ldr	r3, .L32
+ 369 0032 1B68     		ldr	r3, [r3]
+ 370              		.loc 1 85 12 discriminator 1 view .LVU99
+ 371 0034 13F0007F 		tst	r3, #33554432
+ 372 0038 FAD0     		beq	.L30
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 9
+
+
+  86:Core/Src/main.c ****     RCC->CFGR |= RCC_CFGR_SW_PLL;
+ 373              		.loc 1 86 5 is_stmt 1 view .LVU100
+ 374              		.loc 1 86 8 is_stmt 0 view .LVU101
+ 375 003a 064A     		ldr	r2, .L32
+ 376 003c 5368     		ldr	r3, [r2, #4]
+ 377              		.loc 1 86 15 view .LVU102
+ 378 003e 43F00203 		orr	r3, r3, #2
+ 379 0042 5360     		str	r3, [r2, #4]
+  87:Core/Src/main.c ****     while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL);
+ 380              		.loc 1 87 5 is_stmt 1 view .LVU103
+ 381              	.L31:
+ 382              		.loc 1 87 39 discriminator 1 view .LVU104
+ 383              		.loc 1 87 16 is_stmt 0 discriminator 1 view .LVU105
+ 384 0044 034B     		ldr	r3, .L32
+ 385 0046 5B68     		ldr	r3, [r3, #4]
+ 386              		.loc 1 87 23 discriminator 1 view .LVU106
+ 387 0048 03F00C03 		and	r3, r3, #12
+ 388              		.loc 1 87 39 discriminator 1 view .LVU107
+ 389 004c 082B     		cmp	r3, #8
+ 390 004e F9D1     		bne	.L31
+  88:Core/Src/main.c **** }
+ 391              		.loc 1 88 1 view .LVU108
+ 392 0050 7047     		bx	lr
+ 393              	.L33:
+ 394 0052 00BF     		.align	2
+ 395              	.L32:
+ 396 0054 00100240 		.word	1073876992
+ 397 0058 00200240 		.word	1073881088
+ 398              		.cfi_endproc
+ 399              	.LFE67:
+ 401              		.section	.text.Timer2_Init_1200Hz,"ax",%progbits
+ 402              		.align	1
+ 403              		.global	Timer2_Init_1200Hz
+ 404              		.syntax unified
+ 405              		.thumb
+ 406              		.thumb_func
+ 408              	Timer2_Init_1200Hz:
+ 409              	.LFB68:
+  89:Core/Src/main.c **** 
+  90:Core/Src/main.c **** void Timer2_Init_1200Hz(void) {
+ 410              		.loc 1 90 31 is_stmt 1 view -0
+ 411              		.cfi_startproc
+ 412              		@ args = 0, pretend = 0, frame = 0
+ 413              		@ frame_needed = 0, uses_anonymous_args = 0
+ 414              		@ link register save eliminated.
+  91:Core/Src/main.c ****     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+ 415              		.loc 1 91 5 view .LVU110
+ 416              		.loc 1 91 8 is_stmt 0 view .LVU111
+ 417 0000 0D4A     		ldr	r2, .L35
+ 418 0002 D369     		ldr	r3, [r2, #28]
+ 419              		.loc 1 91 18 view .LVU112
+ 420 0004 43F00103 		orr	r3, r3, #1
+ 421 0008 D361     		str	r3, [r2, #28]
+  92:Core/Src/main.c ****     TIM2->PSC = 71;   
+ 422              		.loc 1 92 5 is_stmt 1 view .LVU113
+ 423              		.loc 1 92 15 is_stmt 0 view .LVU114
+ 424 000a 4FF08043 		mov	r3, #1073741824
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 10
+
+
+ 425 000e 4722     		movs	r2, #71
+ 426 0010 9A62     		str	r2, [r3, #40]
+  93:Core/Src/main.c ****     TIM2->ARR = 832;  
+ 427              		.loc 1 93 5 is_stmt 1 view .LVU115
+ 428              		.loc 1 93 15 is_stmt 0 view .LVU116
+ 429 0012 4FF45072 		mov	r2, #832
+ 430 0016 DA62     		str	r2, [r3, #44]
+  94:Core/Src/main.c ****     TIM2->DIER |= TIM_DIER_UIE;
+ 431              		.loc 1 94 5 is_stmt 1 view .LVU117
+ 432              		.loc 1 94 9 is_stmt 0 view .LVU118
+ 433 0018 DA68     		ldr	r2, [r3, #12]
+ 434              		.loc 1 94 16 view .LVU119
+ 435 001a 42F00102 		orr	r2, r2, #1
+ 436 001e DA60     		str	r2, [r3, #12]
+  95:Core/Src/main.c ****     NVIC_SetPriority(TIM2_IRQn, 0);
+ 437              		.loc 1 95 5 is_stmt 1 view .LVU120
+ 438              	.LVL38:
+ 439              	.LBB7:
+ 440              	.LBI7:
+ 441              		.file 2 "CMSIS/Include/core_cm3.h"
+   1:CMSIS/Include/core_cm3.h **** /**************************************************************************//**
+   2:CMSIS/Include/core_cm3.h ****  * @file     core_cm3.h
+   3:CMSIS/Include/core_cm3.h ****  * @brief    CMSIS Cortex-M3 Core Peripheral Access Layer Header File
+   4:CMSIS/Include/core_cm3.h ****  * @version  V5.0.8
+   5:CMSIS/Include/core_cm3.h ****  * @date     04. June 2018
+   6:CMSIS/Include/core_cm3.h ****  ******************************************************************************/
+   7:CMSIS/Include/core_cm3.h **** /*
+   8:CMSIS/Include/core_cm3.h ****  * Copyright (c) 2009-2018 Arm Limited. All rights reserved.
+   9:CMSIS/Include/core_cm3.h ****  *
+  10:CMSIS/Include/core_cm3.h ****  * SPDX-License-Identifier: Apache-2.0
+  11:CMSIS/Include/core_cm3.h ****  *
+  12:CMSIS/Include/core_cm3.h ****  * Licensed under the Apache License, Version 2.0 (the License); you may
+  13:CMSIS/Include/core_cm3.h ****  * not use this file except in compliance with the License.
+  14:CMSIS/Include/core_cm3.h ****  * You may obtain a copy of the License at
+  15:CMSIS/Include/core_cm3.h ****  *
+  16:CMSIS/Include/core_cm3.h ****  * www.apache.org/licenses/LICENSE-2.0
+  17:CMSIS/Include/core_cm3.h ****  *
+  18:CMSIS/Include/core_cm3.h ****  * Unless required by applicable law or agreed to in writing, software
+  19:CMSIS/Include/core_cm3.h ****  * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+  20:CMSIS/Include/core_cm3.h ****  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  21:CMSIS/Include/core_cm3.h ****  * See the License for the specific language governing permissions and
+  22:CMSIS/Include/core_cm3.h ****  * limitations under the License.
+  23:CMSIS/Include/core_cm3.h ****  */
+  24:CMSIS/Include/core_cm3.h **** 
+  25:CMSIS/Include/core_cm3.h **** #if   defined ( __ICCARM__ )
+  26:CMSIS/Include/core_cm3.h ****   #pragma system_include         /* treat file as system include file for MISRA check */
+  27:CMSIS/Include/core_cm3.h **** #elif defined (__clang__)
+  28:CMSIS/Include/core_cm3.h ****   #pragma clang system_header   /* treat file as system include file */
+  29:CMSIS/Include/core_cm3.h **** #endif
+  30:CMSIS/Include/core_cm3.h **** 
+  31:CMSIS/Include/core_cm3.h **** #ifndef __CORE_CM3_H_GENERIC
+  32:CMSIS/Include/core_cm3.h **** #define __CORE_CM3_H_GENERIC
+  33:CMSIS/Include/core_cm3.h **** 
+  34:CMSIS/Include/core_cm3.h **** #include <stdint.h>
+  35:CMSIS/Include/core_cm3.h **** 
+  36:CMSIS/Include/core_cm3.h **** #ifdef __cplusplus
+  37:CMSIS/Include/core_cm3.h ****  extern "C" {
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 11
+
+
+  38:CMSIS/Include/core_cm3.h **** #endif
+  39:CMSIS/Include/core_cm3.h **** 
+  40:CMSIS/Include/core_cm3.h **** /**
+  41:CMSIS/Include/core_cm3.h ****   \page CMSIS_MISRA_Exceptions  MISRA-C:2004 Compliance Exceptions
+  42:CMSIS/Include/core_cm3.h ****   CMSIS violates the following MISRA-C:2004 rules:
+  43:CMSIS/Include/core_cm3.h **** 
+  44:CMSIS/Include/core_cm3.h ****    \li Required Rule 8.5, object/function definition in header file.<br>
+  45:CMSIS/Include/core_cm3.h ****      Function definitions in header files are used to allow 'inlining'.
+  46:CMSIS/Include/core_cm3.h **** 
+  47:CMSIS/Include/core_cm3.h ****    \li Required Rule 18.4, declaration of union type or object of union type: '{...}'.<br>
+  48:CMSIS/Include/core_cm3.h ****      Unions are used for effective representation of core registers.
+  49:CMSIS/Include/core_cm3.h **** 
+  50:CMSIS/Include/core_cm3.h ****    \li Advisory Rule 19.7, Function-like macro defined.<br>
+  51:CMSIS/Include/core_cm3.h ****      Function-like macros are used to allow more efficient code.
+  52:CMSIS/Include/core_cm3.h ****  */
+  53:CMSIS/Include/core_cm3.h **** 
+  54:CMSIS/Include/core_cm3.h **** 
+  55:CMSIS/Include/core_cm3.h **** /*******************************************************************************
+  56:CMSIS/Include/core_cm3.h ****  *                 CMSIS definitions
+  57:CMSIS/Include/core_cm3.h ****  ******************************************************************************/
+  58:CMSIS/Include/core_cm3.h **** /**
+  59:CMSIS/Include/core_cm3.h ****   \ingroup Cortex_M3
+  60:CMSIS/Include/core_cm3.h ****   @{
+  61:CMSIS/Include/core_cm3.h ****  */
+  62:CMSIS/Include/core_cm3.h **** 
+  63:CMSIS/Include/core_cm3.h **** #include "cmsis_version.h"
+  64:CMSIS/Include/core_cm3.h **** 
+  65:CMSIS/Include/core_cm3.h **** /*  CMSIS CM3 definitions */
+  66:CMSIS/Include/core_cm3.h **** #define __CM3_CMSIS_VERSION_MAIN  (__CM_CMSIS_VERSION_MAIN)              /*!< \deprecated [31:16] C
+  67:CMSIS/Include/core_cm3.h **** #define __CM3_CMSIS_VERSION_SUB   (__CM_CMSIS_VERSION_SUB)               /*!< \deprecated [15:0]  C
+  68:CMSIS/Include/core_cm3.h **** #define __CM3_CMSIS_VERSION       ((__CM3_CMSIS_VERSION_MAIN << 16U) | \
+  69:CMSIS/Include/core_cm3.h ****                                     __CM3_CMSIS_VERSION_SUB           )  /*!< \deprecated CMSIS HAL
+  70:CMSIS/Include/core_cm3.h **** 
+  71:CMSIS/Include/core_cm3.h **** #define __CORTEX_M                (3U)                                   /*!< Cortex-M Core */
+  72:CMSIS/Include/core_cm3.h **** 
+  73:CMSIS/Include/core_cm3.h **** /** __FPU_USED indicates whether an FPU is used or not.
+  74:CMSIS/Include/core_cm3.h ****     This core does not support an FPU at all
+  75:CMSIS/Include/core_cm3.h **** */
+  76:CMSIS/Include/core_cm3.h **** #define __FPU_USED       0U
+  77:CMSIS/Include/core_cm3.h **** 
+  78:CMSIS/Include/core_cm3.h **** #if defined ( __CC_ARM )
+  79:CMSIS/Include/core_cm3.h ****   #if defined __TARGET_FPU_VFP
+  80:CMSIS/Include/core_cm3.h ****     #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+  81:CMSIS/Include/core_cm3.h ****   #endif
+  82:CMSIS/Include/core_cm3.h **** 
+  83:CMSIS/Include/core_cm3.h **** #elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+  84:CMSIS/Include/core_cm3.h ****   #if defined __ARM_PCS_VFP
+  85:CMSIS/Include/core_cm3.h ****     #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+  86:CMSIS/Include/core_cm3.h ****   #endif
+  87:CMSIS/Include/core_cm3.h **** 
+  88:CMSIS/Include/core_cm3.h **** #elif defined ( __GNUC__ )
+  89:CMSIS/Include/core_cm3.h ****   #if defined (__VFP_FP__) && !defined(__SOFTFP__)
+  90:CMSIS/Include/core_cm3.h ****     #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+  91:CMSIS/Include/core_cm3.h ****   #endif
+  92:CMSIS/Include/core_cm3.h **** 
+  93:CMSIS/Include/core_cm3.h **** #elif defined ( __ICCARM__ )
+  94:CMSIS/Include/core_cm3.h ****   #if defined __ARMVFP__
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 12
+
+
+  95:CMSIS/Include/core_cm3.h ****     #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+  96:CMSIS/Include/core_cm3.h ****   #endif
+  97:CMSIS/Include/core_cm3.h **** 
+  98:CMSIS/Include/core_cm3.h **** #elif defined ( __TI_ARM__ )
+  99:CMSIS/Include/core_cm3.h ****   #if defined __TI_VFP_SUPPORT__
+ 100:CMSIS/Include/core_cm3.h ****     #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+ 101:CMSIS/Include/core_cm3.h ****   #endif
+ 102:CMSIS/Include/core_cm3.h **** 
+ 103:CMSIS/Include/core_cm3.h **** #elif defined ( __TASKING__ )
+ 104:CMSIS/Include/core_cm3.h ****   #if defined __FPU_VFP__
+ 105:CMSIS/Include/core_cm3.h ****     #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+ 106:CMSIS/Include/core_cm3.h ****   #endif
+ 107:CMSIS/Include/core_cm3.h **** 
+ 108:CMSIS/Include/core_cm3.h **** #elif defined ( __CSMC__ )
+ 109:CMSIS/Include/core_cm3.h ****   #if ( __CSMC__ & 0x400U)
+ 110:CMSIS/Include/core_cm3.h ****     #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+ 111:CMSIS/Include/core_cm3.h ****   #endif
+ 112:CMSIS/Include/core_cm3.h **** 
+ 113:CMSIS/Include/core_cm3.h **** #endif
+ 114:CMSIS/Include/core_cm3.h **** 
+ 115:CMSIS/Include/core_cm3.h **** #include "cmsis_compiler.h"               /* CMSIS compiler specific defines */
+ 116:CMSIS/Include/core_cm3.h **** 
+ 117:CMSIS/Include/core_cm3.h **** 
+ 118:CMSIS/Include/core_cm3.h **** #ifdef __cplusplus
+ 119:CMSIS/Include/core_cm3.h **** }
+ 120:CMSIS/Include/core_cm3.h **** #endif
+ 121:CMSIS/Include/core_cm3.h **** 
+ 122:CMSIS/Include/core_cm3.h **** #endif /* __CORE_CM3_H_GENERIC */
+ 123:CMSIS/Include/core_cm3.h **** 
+ 124:CMSIS/Include/core_cm3.h **** #ifndef __CMSIS_GENERIC
+ 125:CMSIS/Include/core_cm3.h **** 
+ 126:CMSIS/Include/core_cm3.h **** #ifndef __CORE_CM3_H_DEPENDANT
+ 127:CMSIS/Include/core_cm3.h **** #define __CORE_CM3_H_DEPENDANT
+ 128:CMSIS/Include/core_cm3.h **** 
+ 129:CMSIS/Include/core_cm3.h **** #ifdef __cplusplus
+ 130:CMSIS/Include/core_cm3.h ****  extern "C" {
+ 131:CMSIS/Include/core_cm3.h **** #endif
+ 132:CMSIS/Include/core_cm3.h **** 
+ 133:CMSIS/Include/core_cm3.h **** /* check device defines and use defaults */
+ 134:CMSIS/Include/core_cm3.h **** #if defined __CHECK_DEVICE_DEFINES
+ 135:CMSIS/Include/core_cm3.h ****   #ifndef __CM3_REV
+ 136:CMSIS/Include/core_cm3.h ****     #define __CM3_REV               0x0200U
+ 137:CMSIS/Include/core_cm3.h ****     #warning "__CM3_REV not defined in device header file; using default!"
+ 138:CMSIS/Include/core_cm3.h ****   #endif
+ 139:CMSIS/Include/core_cm3.h **** 
+ 140:CMSIS/Include/core_cm3.h ****   #ifndef __MPU_PRESENT
+ 141:CMSIS/Include/core_cm3.h ****     #define __MPU_PRESENT             0U
+ 142:CMSIS/Include/core_cm3.h ****     #warning "__MPU_PRESENT not defined in device header file; using default!"
+ 143:CMSIS/Include/core_cm3.h ****   #endif
+ 144:CMSIS/Include/core_cm3.h **** 
+ 145:CMSIS/Include/core_cm3.h ****   #ifndef __NVIC_PRIO_BITS
+ 146:CMSIS/Include/core_cm3.h ****     #define __NVIC_PRIO_BITS          3U
+ 147:CMSIS/Include/core_cm3.h ****     #warning "__NVIC_PRIO_BITS not defined in device header file; using default!"
+ 148:CMSIS/Include/core_cm3.h ****   #endif
+ 149:CMSIS/Include/core_cm3.h **** 
+ 150:CMSIS/Include/core_cm3.h ****   #ifndef __Vendor_SysTickConfig
+ 151:CMSIS/Include/core_cm3.h ****     #define __Vendor_SysTickConfig    0U
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 13
+
+
+ 152:CMSIS/Include/core_cm3.h ****     #warning "__Vendor_SysTickConfig not defined in device header file; using default!"
+ 153:CMSIS/Include/core_cm3.h ****   #endif
+ 154:CMSIS/Include/core_cm3.h **** #endif
+ 155:CMSIS/Include/core_cm3.h **** 
+ 156:CMSIS/Include/core_cm3.h **** /* IO definitions (access restrictions to peripheral registers) */
+ 157:CMSIS/Include/core_cm3.h **** /**
+ 158:CMSIS/Include/core_cm3.h ****     \defgroup CMSIS_glob_defs CMSIS Global Defines
+ 159:CMSIS/Include/core_cm3.h **** 
+ 160:CMSIS/Include/core_cm3.h ****     <strong>IO Type Qualifiers</strong> are used
+ 161:CMSIS/Include/core_cm3.h ****     \li to specify the access to peripheral variables.
+ 162:CMSIS/Include/core_cm3.h ****     \li for automatic generation of peripheral register debug information.
+ 163:CMSIS/Include/core_cm3.h **** */
+ 164:CMSIS/Include/core_cm3.h **** #ifdef __cplusplus
+ 165:CMSIS/Include/core_cm3.h ****   #define   __I     volatile             /*!< Defines 'read only' permissions */
+ 166:CMSIS/Include/core_cm3.h **** #else
+ 167:CMSIS/Include/core_cm3.h ****   #define   __I     volatile const       /*!< Defines 'read only' permissions */
+ 168:CMSIS/Include/core_cm3.h **** #endif
+ 169:CMSIS/Include/core_cm3.h **** #define     __O     volatile             /*!< Defines 'write only' permissions */
+ 170:CMSIS/Include/core_cm3.h **** #define     __IO    volatile             /*!< Defines 'read / write' permissions */
+ 171:CMSIS/Include/core_cm3.h **** 
+ 172:CMSIS/Include/core_cm3.h **** /* following defines should be used for structure members */
+ 173:CMSIS/Include/core_cm3.h **** #define     __IM     volatile const      /*! Defines 'read only' structure member permissions */
+ 174:CMSIS/Include/core_cm3.h **** #define     __OM     volatile            /*! Defines 'write only' structure member permissions */
+ 175:CMSIS/Include/core_cm3.h **** #define     __IOM    volatile            /*! Defines 'read / write' structure member permissions */
+ 176:CMSIS/Include/core_cm3.h **** 
+ 177:CMSIS/Include/core_cm3.h **** /*@} end of group Cortex_M3 */
+ 178:CMSIS/Include/core_cm3.h **** 
+ 179:CMSIS/Include/core_cm3.h **** 
+ 180:CMSIS/Include/core_cm3.h **** 
+ 181:CMSIS/Include/core_cm3.h **** /*******************************************************************************
+ 182:CMSIS/Include/core_cm3.h ****  *                 Register Abstraction
+ 183:CMSIS/Include/core_cm3.h ****   Core Register contain:
+ 184:CMSIS/Include/core_cm3.h ****   - Core Register
+ 185:CMSIS/Include/core_cm3.h ****   - Core NVIC Register
+ 186:CMSIS/Include/core_cm3.h ****   - Core SCB Register
+ 187:CMSIS/Include/core_cm3.h ****   - Core SysTick Register
+ 188:CMSIS/Include/core_cm3.h ****   - Core Debug Register
+ 189:CMSIS/Include/core_cm3.h ****   - Core MPU Register
+ 190:CMSIS/Include/core_cm3.h ****  ******************************************************************************/
+ 191:CMSIS/Include/core_cm3.h **** /**
+ 192:CMSIS/Include/core_cm3.h ****   \defgroup CMSIS_core_register Defines and Type Definitions
+ 193:CMSIS/Include/core_cm3.h ****   \brief Type definitions and defines for Cortex-M processor based devices.
+ 194:CMSIS/Include/core_cm3.h **** */
+ 195:CMSIS/Include/core_cm3.h **** 
+ 196:CMSIS/Include/core_cm3.h **** /**
+ 197:CMSIS/Include/core_cm3.h ****   \ingroup    CMSIS_core_register
+ 198:CMSIS/Include/core_cm3.h ****   \defgroup   CMSIS_CORE  Status and Control Registers
+ 199:CMSIS/Include/core_cm3.h ****   \brief      Core Register type definitions.
+ 200:CMSIS/Include/core_cm3.h ****   @{
+ 201:CMSIS/Include/core_cm3.h ****  */
+ 202:CMSIS/Include/core_cm3.h **** 
+ 203:CMSIS/Include/core_cm3.h **** /**
+ 204:CMSIS/Include/core_cm3.h ****   \brief  Union type to access the Application Program Status Register (APSR).
+ 205:CMSIS/Include/core_cm3.h ****  */
+ 206:CMSIS/Include/core_cm3.h **** typedef union
+ 207:CMSIS/Include/core_cm3.h **** {
+ 208:CMSIS/Include/core_cm3.h ****   struct
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 14
+
+
+ 209:CMSIS/Include/core_cm3.h ****   {
+ 210:CMSIS/Include/core_cm3.h ****     uint32_t _reserved0:27;              /*!< bit:  0..26  Reserved */
+ 211:CMSIS/Include/core_cm3.h ****     uint32_t Q:1;                        /*!< bit:     27  Saturation condition flag */
+ 212:CMSIS/Include/core_cm3.h ****     uint32_t V:1;                        /*!< bit:     28  Overflow condition code flag */
+ 213:CMSIS/Include/core_cm3.h ****     uint32_t C:1;                        /*!< bit:     29  Carry condition code flag */
+ 214:CMSIS/Include/core_cm3.h ****     uint32_t Z:1;                        /*!< bit:     30  Zero condition code flag */
+ 215:CMSIS/Include/core_cm3.h ****     uint32_t N:1;                        /*!< bit:     31  Negative condition code flag */
+ 216:CMSIS/Include/core_cm3.h ****   } b;                                   /*!< Structure used for bit  access */
+ 217:CMSIS/Include/core_cm3.h ****   uint32_t w;                            /*!< Type      used for word access */
+ 218:CMSIS/Include/core_cm3.h **** } APSR_Type;
+ 219:CMSIS/Include/core_cm3.h **** 
+ 220:CMSIS/Include/core_cm3.h **** /* APSR Register Definitions */
+ 221:CMSIS/Include/core_cm3.h **** #define APSR_N_Pos                         31U                                            /*!< APSR
+ 222:CMSIS/Include/core_cm3.h **** #define APSR_N_Msk                         (1UL << APSR_N_Pos)                            /*!< APSR
+ 223:CMSIS/Include/core_cm3.h **** 
+ 224:CMSIS/Include/core_cm3.h **** #define APSR_Z_Pos                         30U                                            /*!< APSR
+ 225:CMSIS/Include/core_cm3.h **** #define APSR_Z_Msk                         (1UL << APSR_Z_Pos)                            /*!< APSR
+ 226:CMSIS/Include/core_cm3.h **** 
+ 227:CMSIS/Include/core_cm3.h **** #define APSR_C_Pos                         29U                                            /*!< APSR
+ 228:CMSIS/Include/core_cm3.h **** #define APSR_C_Msk                         (1UL << APSR_C_Pos)                            /*!< APSR
+ 229:CMSIS/Include/core_cm3.h **** 
+ 230:CMSIS/Include/core_cm3.h **** #define APSR_V_Pos                         28U                                            /*!< APSR
+ 231:CMSIS/Include/core_cm3.h **** #define APSR_V_Msk                         (1UL << APSR_V_Pos)                            /*!< APSR
+ 232:CMSIS/Include/core_cm3.h **** 
+ 233:CMSIS/Include/core_cm3.h **** #define APSR_Q_Pos                         27U                                            /*!< APSR
+ 234:CMSIS/Include/core_cm3.h **** #define APSR_Q_Msk                         (1UL << APSR_Q_Pos)                            /*!< APSR
+ 235:CMSIS/Include/core_cm3.h **** 
+ 236:CMSIS/Include/core_cm3.h **** 
+ 237:CMSIS/Include/core_cm3.h **** /**
+ 238:CMSIS/Include/core_cm3.h ****   \brief  Union type to access the Interrupt Program Status Register (IPSR).
+ 239:CMSIS/Include/core_cm3.h ****  */
+ 240:CMSIS/Include/core_cm3.h **** typedef union
+ 241:CMSIS/Include/core_cm3.h **** {
+ 242:CMSIS/Include/core_cm3.h ****   struct
+ 243:CMSIS/Include/core_cm3.h ****   {
+ 244:CMSIS/Include/core_cm3.h ****     uint32_t ISR:9;                      /*!< bit:  0.. 8  Exception number */
+ 245:CMSIS/Include/core_cm3.h ****     uint32_t _reserved0:23;              /*!< bit:  9..31  Reserved */
+ 246:CMSIS/Include/core_cm3.h ****   } b;                                   /*!< Structure used for bit  access */
+ 247:CMSIS/Include/core_cm3.h ****   uint32_t w;                            /*!< Type      used for word access */
+ 248:CMSIS/Include/core_cm3.h **** } IPSR_Type;
+ 249:CMSIS/Include/core_cm3.h **** 
+ 250:CMSIS/Include/core_cm3.h **** /* IPSR Register Definitions */
+ 251:CMSIS/Include/core_cm3.h **** #define IPSR_ISR_Pos                        0U                                            /*!< IPSR
+ 252:CMSIS/Include/core_cm3.h **** #define IPSR_ISR_Msk                       (0x1FFUL /*<< IPSR_ISR_Pos*/)                  /*!< IPSR
+ 253:CMSIS/Include/core_cm3.h **** 
+ 254:CMSIS/Include/core_cm3.h **** 
+ 255:CMSIS/Include/core_cm3.h **** /**
+ 256:CMSIS/Include/core_cm3.h ****   \brief  Union type to access the Special-Purpose Program Status Registers (xPSR).
+ 257:CMSIS/Include/core_cm3.h ****  */
+ 258:CMSIS/Include/core_cm3.h **** typedef union
+ 259:CMSIS/Include/core_cm3.h **** {
+ 260:CMSIS/Include/core_cm3.h ****   struct
+ 261:CMSIS/Include/core_cm3.h ****   {
+ 262:CMSIS/Include/core_cm3.h ****     uint32_t ISR:9;                      /*!< bit:  0.. 8  Exception number */
+ 263:CMSIS/Include/core_cm3.h ****     uint32_t _reserved0:1;               /*!< bit:      9  Reserved */
+ 264:CMSIS/Include/core_cm3.h ****     uint32_t ICI_IT_1:6;                 /*!< bit: 10..15  ICI/IT part 1 */
+ 265:CMSIS/Include/core_cm3.h ****     uint32_t _reserved1:8;               /*!< bit: 16..23  Reserved */
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 15
+
+
+ 266:CMSIS/Include/core_cm3.h ****     uint32_t T:1;                        /*!< bit:     24  Thumb bit */
+ 267:CMSIS/Include/core_cm3.h ****     uint32_t ICI_IT_2:2;                 /*!< bit: 25..26  ICI/IT part 2 */
+ 268:CMSIS/Include/core_cm3.h ****     uint32_t Q:1;                        /*!< bit:     27  Saturation condition flag */
+ 269:CMSIS/Include/core_cm3.h ****     uint32_t V:1;                        /*!< bit:     28  Overflow condition code flag */
+ 270:CMSIS/Include/core_cm3.h ****     uint32_t C:1;                        /*!< bit:     29  Carry condition code flag */
+ 271:CMSIS/Include/core_cm3.h ****     uint32_t Z:1;                        /*!< bit:     30  Zero condition code flag */
+ 272:CMSIS/Include/core_cm3.h ****     uint32_t N:1;                        /*!< bit:     31  Negative condition code flag */
+ 273:CMSIS/Include/core_cm3.h ****   } b;                                   /*!< Structure used for bit  access */
+ 274:CMSIS/Include/core_cm3.h ****   uint32_t w;                            /*!< Type      used for word access */
+ 275:CMSIS/Include/core_cm3.h **** } xPSR_Type;
+ 276:CMSIS/Include/core_cm3.h **** 
+ 277:CMSIS/Include/core_cm3.h **** /* xPSR Register Definitions */
+ 278:CMSIS/Include/core_cm3.h **** #define xPSR_N_Pos                         31U                                            /*!< xPSR
+ 279:CMSIS/Include/core_cm3.h **** #define xPSR_N_Msk                         (1UL << xPSR_N_Pos)                            /*!< xPSR
+ 280:CMSIS/Include/core_cm3.h **** 
+ 281:CMSIS/Include/core_cm3.h **** #define xPSR_Z_Pos                         30U                                            /*!< xPSR
+ 282:CMSIS/Include/core_cm3.h **** #define xPSR_Z_Msk                         (1UL << xPSR_Z_Pos)                            /*!< xPSR
+ 283:CMSIS/Include/core_cm3.h **** 
+ 284:CMSIS/Include/core_cm3.h **** #define xPSR_C_Pos                         29U                                            /*!< xPSR
+ 285:CMSIS/Include/core_cm3.h **** #define xPSR_C_Msk                         (1UL << xPSR_C_Pos)                            /*!< xPSR
+ 286:CMSIS/Include/core_cm3.h **** 
+ 287:CMSIS/Include/core_cm3.h **** #define xPSR_V_Pos                         28U                                            /*!< xPSR
+ 288:CMSIS/Include/core_cm3.h **** #define xPSR_V_Msk                         (1UL << xPSR_V_Pos)                            /*!< xPSR
+ 289:CMSIS/Include/core_cm3.h **** 
+ 290:CMSIS/Include/core_cm3.h **** #define xPSR_Q_Pos                         27U                                            /*!< xPSR
+ 291:CMSIS/Include/core_cm3.h **** #define xPSR_Q_Msk                         (1UL << xPSR_Q_Pos)                            /*!< xPSR
+ 292:CMSIS/Include/core_cm3.h **** 
+ 293:CMSIS/Include/core_cm3.h **** #define xPSR_ICI_IT_2_Pos                  25U                                            /*!< xPSR
+ 294:CMSIS/Include/core_cm3.h **** #define xPSR_ICI_IT_2_Msk                  (3UL << xPSR_ICI_IT_2_Pos)                     /*!< xPSR
+ 295:CMSIS/Include/core_cm3.h **** 
+ 296:CMSIS/Include/core_cm3.h **** #define xPSR_T_Pos                         24U                                            /*!< xPSR
+ 297:CMSIS/Include/core_cm3.h **** #define xPSR_T_Msk                         (1UL << xPSR_T_Pos)                            /*!< xPSR
+ 298:CMSIS/Include/core_cm3.h **** 
+ 299:CMSIS/Include/core_cm3.h **** #define xPSR_ICI_IT_1_Pos                  10U                                            /*!< xPSR
+ 300:CMSIS/Include/core_cm3.h **** #define xPSR_ICI_IT_1_Msk                  (0x3FUL << xPSR_ICI_IT_1_Pos)                  /*!< xPSR
+ 301:CMSIS/Include/core_cm3.h **** 
+ 302:CMSIS/Include/core_cm3.h **** #define xPSR_ISR_Pos                        0U                                            /*!< xPSR
+ 303:CMSIS/Include/core_cm3.h **** #define xPSR_ISR_Msk                       (0x1FFUL /*<< xPSR_ISR_Pos*/)                  /*!< xPSR
+ 304:CMSIS/Include/core_cm3.h **** 
+ 305:CMSIS/Include/core_cm3.h **** 
+ 306:CMSIS/Include/core_cm3.h **** /**
+ 307:CMSIS/Include/core_cm3.h ****   \brief  Union type to access the Control Registers (CONTROL).
+ 308:CMSIS/Include/core_cm3.h ****  */
+ 309:CMSIS/Include/core_cm3.h **** typedef union
+ 310:CMSIS/Include/core_cm3.h **** {
+ 311:CMSIS/Include/core_cm3.h ****   struct
+ 312:CMSIS/Include/core_cm3.h ****   {
+ 313:CMSIS/Include/core_cm3.h ****     uint32_t nPRIV:1;                    /*!< bit:      0  Execution privilege in Thread mode */
+ 314:CMSIS/Include/core_cm3.h ****     uint32_t SPSEL:1;                    /*!< bit:      1  Stack to be used */
+ 315:CMSIS/Include/core_cm3.h ****     uint32_t _reserved1:30;              /*!< bit:  2..31  Reserved */
+ 316:CMSIS/Include/core_cm3.h ****   } b;                                   /*!< Structure used for bit  access */
+ 317:CMSIS/Include/core_cm3.h ****   uint32_t w;                            /*!< Type      used for word access */
+ 318:CMSIS/Include/core_cm3.h **** } CONTROL_Type;
+ 319:CMSIS/Include/core_cm3.h **** 
+ 320:CMSIS/Include/core_cm3.h **** /* CONTROL Register Definitions */
+ 321:CMSIS/Include/core_cm3.h **** #define CONTROL_SPSEL_Pos                   1U                                            /*!< CONT
+ 322:CMSIS/Include/core_cm3.h **** #define CONTROL_SPSEL_Msk                  (1UL << CONTROL_SPSEL_Pos)                     /*!< CONT
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 16
+
+
+ 323:CMSIS/Include/core_cm3.h **** 
+ 324:CMSIS/Include/core_cm3.h **** #define CONTROL_nPRIV_Pos                   0U                                            /*!< CONT
+ 325:CMSIS/Include/core_cm3.h **** #define CONTROL_nPRIV_Msk                  (1UL /*<< CONTROL_nPRIV_Pos*/)                 /*!< CONT
+ 326:CMSIS/Include/core_cm3.h **** 
+ 327:CMSIS/Include/core_cm3.h **** /*@} end of group CMSIS_CORE */
+ 328:CMSIS/Include/core_cm3.h **** 
+ 329:CMSIS/Include/core_cm3.h **** 
+ 330:CMSIS/Include/core_cm3.h **** /**
+ 331:CMSIS/Include/core_cm3.h ****   \ingroup    CMSIS_core_register
+ 332:CMSIS/Include/core_cm3.h ****   \defgroup   CMSIS_NVIC  Nested Vectored Interrupt Controller (NVIC)
+ 333:CMSIS/Include/core_cm3.h ****   \brief      Type definitions for the NVIC Registers
+ 334:CMSIS/Include/core_cm3.h ****   @{
+ 335:CMSIS/Include/core_cm3.h ****  */
+ 336:CMSIS/Include/core_cm3.h **** 
+ 337:CMSIS/Include/core_cm3.h **** /**
+ 338:CMSIS/Include/core_cm3.h ****   \brief  Structure type to access the Nested Vectored Interrupt Controller (NVIC).
+ 339:CMSIS/Include/core_cm3.h ****  */
+ 340:CMSIS/Include/core_cm3.h **** typedef struct
+ 341:CMSIS/Include/core_cm3.h **** {
+ 342:CMSIS/Include/core_cm3.h ****   __IOM uint32_t ISER[8U];               /*!< Offset: 0x000 (R/W)  Interrupt Set Enable Register */
+ 343:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED0[24U];
+ 344:CMSIS/Include/core_cm3.h ****   __IOM uint32_t ICER[8U];               /*!< Offset: 0x080 (R/W)  Interrupt Clear Enable Register 
+ 345:CMSIS/Include/core_cm3.h ****         uint32_t RSERVED1[24U];
+ 346:CMSIS/Include/core_cm3.h ****   __IOM uint32_t ISPR[8U];               /*!< Offset: 0x100 (R/W)  Interrupt Set Pending Register *
+ 347:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED2[24U];
+ 348:CMSIS/Include/core_cm3.h ****   __IOM uint32_t ICPR[8U];               /*!< Offset: 0x180 (R/W)  Interrupt Clear Pending Register
+ 349:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED3[24U];
+ 350:CMSIS/Include/core_cm3.h ****   __IOM uint32_t IABR[8U];               /*!< Offset: 0x200 (R/W)  Interrupt Active bit Register */
+ 351:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED4[56U];
+ 352:CMSIS/Include/core_cm3.h ****   __IOM uint8_t  IP[240U];               /*!< Offset: 0x300 (R/W)  Interrupt Priority Register (8Bi
+ 353:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED5[644U];
+ 354:CMSIS/Include/core_cm3.h ****   __OM  uint32_t STIR;                   /*!< Offset: 0xE00 ( /W)  Software Trigger Interrupt Regis
+ 355:CMSIS/Include/core_cm3.h **** }  NVIC_Type;
+ 356:CMSIS/Include/core_cm3.h **** 
+ 357:CMSIS/Include/core_cm3.h **** /* Software Triggered Interrupt Register Definitions */
+ 358:CMSIS/Include/core_cm3.h **** #define NVIC_STIR_INTID_Pos                 0U                                         /*!< STIR: I
+ 359:CMSIS/Include/core_cm3.h **** #define NVIC_STIR_INTID_Msk                (0x1FFUL /*<< NVIC_STIR_INTID_Pos*/)        /*!< STIR: I
+ 360:CMSIS/Include/core_cm3.h **** 
+ 361:CMSIS/Include/core_cm3.h **** /*@} end of group CMSIS_NVIC */
+ 362:CMSIS/Include/core_cm3.h **** 
+ 363:CMSIS/Include/core_cm3.h **** 
+ 364:CMSIS/Include/core_cm3.h **** /**
+ 365:CMSIS/Include/core_cm3.h ****   \ingroup  CMSIS_core_register
+ 366:CMSIS/Include/core_cm3.h ****   \defgroup CMSIS_SCB     System Control Block (SCB)
+ 367:CMSIS/Include/core_cm3.h ****   \brief    Type definitions for the System Control Block Registers
+ 368:CMSIS/Include/core_cm3.h ****   @{
+ 369:CMSIS/Include/core_cm3.h ****  */
+ 370:CMSIS/Include/core_cm3.h **** 
+ 371:CMSIS/Include/core_cm3.h **** /**
+ 372:CMSIS/Include/core_cm3.h ****   \brief  Structure type to access the System Control Block (SCB).
+ 373:CMSIS/Include/core_cm3.h ****  */
+ 374:CMSIS/Include/core_cm3.h **** typedef struct
+ 375:CMSIS/Include/core_cm3.h **** {
+ 376:CMSIS/Include/core_cm3.h ****   __IM  uint32_t CPUID;                  /*!< Offset: 0x000 (R/ )  CPUID Base Register */
+ 377:CMSIS/Include/core_cm3.h ****   __IOM uint32_t ICSR;                   /*!< Offset: 0x004 (R/W)  Interrupt Control and State Regi
+ 378:CMSIS/Include/core_cm3.h ****   __IOM uint32_t VTOR;                   /*!< Offset: 0x008 (R/W)  Vector Table Offset Register */
+ 379:CMSIS/Include/core_cm3.h ****   __IOM uint32_t AIRCR;                  /*!< Offset: 0x00C (R/W)  Application Interrupt and Reset 
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 17
+
+
+ 380:CMSIS/Include/core_cm3.h ****   __IOM uint32_t SCR;                    /*!< Offset: 0x010 (R/W)  System Control Register */
+ 381:CMSIS/Include/core_cm3.h ****   __IOM uint32_t CCR;                    /*!< Offset: 0x014 (R/W)  Configuration Control Register *
+ 382:CMSIS/Include/core_cm3.h ****   __IOM uint8_t  SHP[12U];               /*!< Offset: 0x018 (R/W)  System Handlers Priority Registe
+ 383:CMSIS/Include/core_cm3.h ****   __IOM uint32_t SHCSR;                  /*!< Offset: 0x024 (R/W)  System Handler Control and State
+ 384:CMSIS/Include/core_cm3.h ****   __IOM uint32_t CFSR;                   /*!< Offset: 0x028 (R/W)  Configurable Fault Status Regist
+ 385:CMSIS/Include/core_cm3.h ****   __IOM uint32_t HFSR;                   /*!< Offset: 0x02C (R/W)  HardFault Status Register */
+ 386:CMSIS/Include/core_cm3.h ****   __IOM uint32_t DFSR;                   /*!< Offset: 0x030 (R/W)  Debug Fault Status Register */
+ 387:CMSIS/Include/core_cm3.h ****   __IOM uint32_t MMFAR;                  /*!< Offset: 0x034 (R/W)  MemManage Fault Address Register
+ 388:CMSIS/Include/core_cm3.h ****   __IOM uint32_t BFAR;                   /*!< Offset: 0x038 (R/W)  BusFault Address Register */
+ 389:CMSIS/Include/core_cm3.h ****   __IOM uint32_t AFSR;                   /*!< Offset: 0x03C (R/W)  Auxiliary Fault Status Register 
+ 390:CMSIS/Include/core_cm3.h ****   __IM  uint32_t PFR[2U];                /*!< Offset: 0x040 (R/ )  Processor Feature Register */
+ 391:CMSIS/Include/core_cm3.h ****   __IM  uint32_t DFR;                    /*!< Offset: 0x048 (R/ )  Debug Feature Register */
+ 392:CMSIS/Include/core_cm3.h ****   __IM  uint32_t ADR;                    /*!< Offset: 0x04C (R/ )  Auxiliary Feature Register */
+ 393:CMSIS/Include/core_cm3.h ****   __IM  uint32_t MMFR[4U];               /*!< Offset: 0x050 (R/ )  Memory Model Feature Register */
+ 394:CMSIS/Include/core_cm3.h ****   __IM  uint32_t ISAR[5U];               /*!< Offset: 0x060 (R/ )  Instruction Set Attributes Regis
+ 395:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED0[5U];
+ 396:CMSIS/Include/core_cm3.h ****   __IOM uint32_t CPACR;                  /*!< Offset: 0x088 (R/W)  Coprocessor Access Control Regis
+ 397:CMSIS/Include/core_cm3.h **** } SCB_Type;
+ 398:CMSIS/Include/core_cm3.h **** 
+ 399:CMSIS/Include/core_cm3.h **** /* SCB CPUID Register Definitions */
+ 400:CMSIS/Include/core_cm3.h **** #define SCB_CPUID_IMPLEMENTER_Pos          24U                                            /*!< SCB 
+ 401:CMSIS/Include/core_cm3.h **** #define SCB_CPUID_IMPLEMENTER_Msk          (0xFFUL << SCB_CPUID_IMPLEMENTER_Pos)          /*!< SCB 
+ 402:CMSIS/Include/core_cm3.h **** 
+ 403:CMSIS/Include/core_cm3.h **** #define SCB_CPUID_VARIANT_Pos              20U                                            /*!< SCB 
+ 404:CMSIS/Include/core_cm3.h **** #define SCB_CPUID_VARIANT_Msk              (0xFUL << SCB_CPUID_VARIANT_Pos)               /*!< SCB 
+ 405:CMSIS/Include/core_cm3.h **** 
+ 406:CMSIS/Include/core_cm3.h **** #define SCB_CPUID_ARCHITECTURE_Pos         16U                                            /*!< SCB 
+ 407:CMSIS/Include/core_cm3.h **** #define SCB_CPUID_ARCHITECTURE_Msk         (0xFUL << SCB_CPUID_ARCHITECTURE_Pos)          /*!< SCB 
+ 408:CMSIS/Include/core_cm3.h **** 
+ 409:CMSIS/Include/core_cm3.h **** #define SCB_CPUID_PARTNO_Pos                4U                                            /*!< SCB 
+ 410:CMSIS/Include/core_cm3.h **** #define SCB_CPUID_PARTNO_Msk               (0xFFFUL << SCB_CPUID_PARTNO_Pos)              /*!< SCB 
+ 411:CMSIS/Include/core_cm3.h **** 
+ 412:CMSIS/Include/core_cm3.h **** #define SCB_CPUID_REVISION_Pos              0U                                            /*!< SCB 
+ 413:CMSIS/Include/core_cm3.h **** #define SCB_CPUID_REVISION_Msk             (0xFUL /*<< SCB_CPUID_REVISION_Pos*/)          /*!< SCB 
+ 414:CMSIS/Include/core_cm3.h **** 
+ 415:CMSIS/Include/core_cm3.h **** /* SCB Interrupt Control State Register Definitions */
+ 416:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_NMIPENDSET_Pos            31U                                            /*!< SCB 
+ 417:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_NMIPENDSET_Msk            (1UL << SCB_ICSR_NMIPENDSET_Pos)               /*!< SCB 
+ 418:CMSIS/Include/core_cm3.h **** 
+ 419:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_PENDSVSET_Pos             28U                                            /*!< SCB 
+ 420:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_PENDSVSET_Msk             (1UL << SCB_ICSR_PENDSVSET_Pos)                /*!< SCB 
+ 421:CMSIS/Include/core_cm3.h **** 
+ 422:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_PENDSVCLR_Pos             27U                                            /*!< SCB 
+ 423:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_PENDSVCLR_Msk             (1UL << SCB_ICSR_PENDSVCLR_Pos)                /*!< SCB 
+ 424:CMSIS/Include/core_cm3.h **** 
+ 425:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_PENDSTSET_Pos             26U                                            /*!< SCB 
+ 426:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_PENDSTSET_Msk             (1UL << SCB_ICSR_PENDSTSET_Pos)                /*!< SCB 
+ 427:CMSIS/Include/core_cm3.h **** 
+ 428:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_PENDSTCLR_Pos             25U                                            /*!< SCB 
+ 429:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_PENDSTCLR_Msk             (1UL << SCB_ICSR_PENDSTCLR_Pos)                /*!< SCB 
+ 430:CMSIS/Include/core_cm3.h **** 
+ 431:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_ISRPREEMPT_Pos            23U                                            /*!< SCB 
+ 432:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_ISRPREEMPT_Msk            (1UL << SCB_ICSR_ISRPREEMPT_Pos)               /*!< SCB 
+ 433:CMSIS/Include/core_cm3.h **** 
+ 434:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_ISRPENDING_Pos            22U                                            /*!< SCB 
+ 435:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_ISRPENDING_Msk            (1UL << SCB_ICSR_ISRPENDING_Pos)               /*!< SCB 
+ 436:CMSIS/Include/core_cm3.h **** 
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 18
+
+
+ 437:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_VECTPENDING_Pos           12U                                            /*!< SCB 
+ 438:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_VECTPENDING_Msk           (0x1FFUL << SCB_ICSR_VECTPENDING_Pos)          /*!< SCB 
+ 439:CMSIS/Include/core_cm3.h **** 
+ 440:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_RETTOBASE_Pos             11U                                            /*!< SCB 
+ 441:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_RETTOBASE_Msk             (1UL << SCB_ICSR_RETTOBASE_Pos)                /*!< SCB 
+ 442:CMSIS/Include/core_cm3.h **** 
+ 443:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_VECTACTIVE_Pos             0U                                            /*!< SCB 
+ 444:CMSIS/Include/core_cm3.h **** #define SCB_ICSR_VECTACTIVE_Msk            (0x1FFUL /*<< SCB_ICSR_VECTACTIVE_Pos*/)       /*!< SCB 
+ 445:CMSIS/Include/core_cm3.h **** 
+ 446:CMSIS/Include/core_cm3.h **** /* SCB Vector Table Offset Register Definitions */
+ 447:CMSIS/Include/core_cm3.h **** #if defined (__CM3_REV) && (__CM3_REV < 0x0201U)                   /* core r2p1 */
+ 448:CMSIS/Include/core_cm3.h **** #define SCB_VTOR_TBLBASE_Pos               29U                                            /*!< SCB 
+ 449:CMSIS/Include/core_cm3.h **** #define SCB_VTOR_TBLBASE_Msk               (1UL << SCB_VTOR_TBLBASE_Pos)                  /*!< SCB 
+ 450:CMSIS/Include/core_cm3.h **** 
+ 451:CMSIS/Include/core_cm3.h **** #define SCB_VTOR_TBLOFF_Pos                 7U                                            /*!< SCB 
+ 452:CMSIS/Include/core_cm3.h **** #define SCB_VTOR_TBLOFF_Msk                (0x3FFFFFUL << SCB_VTOR_TBLOFF_Pos)            /*!< SCB 
+ 453:CMSIS/Include/core_cm3.h **** #else
+ 454:CMSIS/Include/core_cm3.h **** #define SCB_VTOR_TBLOFF_Pos                 7U                                            /*!< SCB 
+ 455:CMSIS/Include/core_cm3.h **** #define SCB_VTOR_TBLOFF_Msk                (0x1FFFFFFUL << SCB_VTOR_TBLOFF_Pos)           /*!< SCB 
+ 456:CMSIS/Include/core_cm3.h **** #endif
+ 457:CMSIS/Include/core_cm3.h **** 
+ 458:CMSIS/Include/core_cm3.h **** /* SCB Application Interrupt and Reset Control Register Definitions */
+ 459:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_VECTKEY_Pos              16U                                            /*!< SCB 
+ 460:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_VECTKEY_Msk              (0xFFFFUL << SCB_AIRCR_VECTKEY_Pos)            /*!< SCB 
+ 461:CMSIS/Include/core_cm3.h **** 
+ 462:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_VECTKEYSTAT_Pos          16U                                            /*!< SCB 
+ 463:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_VECTKEYSTAT_Msk          (0xFFFFUL << SCB_AIRCR_VECTKEYSTAT_Pos)        /*!< SCB 
+ 464:CMSIS/Include/core_cm3.h **** 
+ 465:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_ENDIANESS_Pos            15U                                            /*!< SCB 
+ 466:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_ENDIANESS_Msk            (1UL << SCB_AIRCR_ENDIANESS_Pos)               /*!< SCB 
+ 467:CMSIS/Include/core_cm3.h **** 
+ 468:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_PRIGROUP_Pos              8U                                            /*!< SCB 
+ 469:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_PRIGROUP_Msk             (7UL << SCB_AIRCR_PRIGROUP_Pos)                /*!< SCB 
+ 470:CMSIS/Include/core_cm3.h **** 
+ 471:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_SYSRESETREQ_Pos           2U                                            /*!< SCB 
+ 472:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_SYSRESETREQ_Msk          (1UL << SCB_AIRCR_SYSRESETREQ_Pos)             /*!< SCB 
+ 473:CMSIS/Include/core_cm3.h **** 
+ 474:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_VECTCLRACTIVE_Pos         1U                                            /*!< SCB 
+ 475:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_VECTCLRACTIVE_Msk        (1UL << SCB_AIRCR_VECTCLRACTIVE_Pos)           /*!< SCB 
+ 476:CMSIS/Include/core_cm3.h **** 
+ 477:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_VECTRESET_Pos             0U                                            /*!< SCB 
+ 478:CMSIS/Include/core_cm3.h **** #define SCB_AIRCR_VECTRESET_Msk            (1UL /*<< SCB_AIRCR_VECTRESET_Pos*/)           /*!< SCB 
+ 479:CMSIS/Include/core_cm3.h **** 
+ 480:CMSIS/Include/core_cm3.h **** /* SCB System Control Register Definitions */
+ 481:CMSIS/Include/core_cm3.h **** #define SCB_SCR_SEVONPEND_Pos               4U                                            /*!< SCB 
+ 482:CMSIS/Include/core_cm3.h **** #define SCB_SCR_SEVONPEND_Msk              (1UL << SCB_SCR_SEVONPEND_Pos)                 /*!< SCB 
+ 483:CMSIS/Include/core_cm3.h **** 
+ 484:CMSIS/Include/core_cm3.h **** #define SCB_SCR_SLEEPDEEP_Pos               2U                                            /*!< SCB 
+ 485:CMSIS/Include/core_cm3.h **** #define SCB_SCR_SLEEPDEEP_Msk              (1UL << SCB_SCR_SLEEPDEEP_Pos)                 /*!< SCB 
+ 486:CMSIS/Include/core_cm3.h **** 
+ 487:CMSIS/Include/core_cm3.h **** #define SCB_SCR_SLEEPONEXIT_Pos             1U                                            /*!< SCB 
+ 488:CMSIS/Include/core_cm3.h **** #define SCB_SCR_SLEEPONEXIT_Msk            (1UL << SCB_SCR_SLEEPONEXIT_Pos)               /*!< SCB 
+ 489:CMSIS/Include/core_cm3.h **** 
+ 490:CMSIS/Include/core_cm3.h **** /* SCB Configuration Control Register Definitions */
+ 491:CMSIS/Include/core_cm3.h **** #define SCB_CCR_STKALIGN_Pos                9U                                            /*!< SCB 
+ 492:CMSIS/Include/core_cm3.h **** #define SCB_CCR_STKALIGN_Msk               (1UL << SCB_CCR_STKALIGN_Pos)                  /*!< SCB 
+ 493:CMSIS/Include/core_cm3.h **** 
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 19
+
+
+ 494:CMSIS/Include/core_cm3.h **** #define SCB_CCR_BFHFNMIGN_Pos               8U                                            /*!< SCB 
+ 495:CMSIS/Include/core_cm3.h **** #define SCB_CCR_BFHFNMIGN_Msk              (1UL << SCB_CCR_BFHFNMIGN_Pos)                 /*!< SCB 
+ 496:CMSIS/Include/core_cm3.h **** 
+ 497:CMSIS/Include/core_cm3.h **** #define SCB_CCR_DIV_0_TRP_Pos               4U                                            /*!< SCB 
+ 498:CMSIS/Include/core_cm3.h **** #define SCB_CCR_DIV_0_TRP_Msk              (1UL << SCB_CCR_DIV_0_TRP_Pos)                 /*!< SCB 
+ 499:CMSIS/Include/core_cm3.h **** 
+ 500:CMSIS/Include/core_cm3.h **** #define SCB_CCR_UNALIGN_TRP_Pos             3U                                            /*!< SCB 
+ 501:CMSIS/Include/core_cm3.h **** #define SCB_CCR_UNALIGN_TRP_Msk            (1UL << SCB_CCR_UNALIGN_TRP_Pos)               /*!< SCB 
+ 502:CMSIS/Include/core_cm3.h **** 
+ 503:CMSIS/Include/core_cm3.h **** #define SCB_CCR_USERSETMPEND_Pos            1U                                            /*!< SCB 
+ 504:CMSIS/Include/core_cm3.h **** #define SCB_CCR_USERSETMPEND_Msk           (1UL << SCB_CCR_USERSETMPEND_Pos)              /*!< SCB 
+ 505:CMSIS/Include/core_cm3.h **** 
+ 506:CMSIS/Include/core_cm3.h **** #define SCB_CCR_NONBASETHRDENA_Pos          0U                                            /*!< SCB 
+ 507:CMSIS/Include/core_cm3.h **** #define SCB_CCR_NONBASETHRDENA_Msk         (1UL /*<< SCB_CCR_NONBASETHRDENA_Pos*/)        /*!< SCB 
+ 508:CMSIS/Include/core_cm3.h **** 
+ 509:CMSIS/Include/core_cm3.h **** /* SCB System Handler Control and State Register Definitions */
+ 510:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_USGFAULTENA_Pos          18U                                            /*!< SCB 
+ 511:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_USGFAULTENA_Msk          (1UL << SCB_SHCSR_USGFAULTENA_Pos)             /*!< SCB 
+ 512:CMSIS/Include/core_cm3.h **** 
+ 513:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_BUSFAULTENA_Pos          17U                                            /*!< SCB 
+ 514:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_BUSFAULTENA_Msk          (1UL << SCB_SHCSR_BUSFAULTENA_Pos)             /*!< SCB 
+ 515:CMSIS/Include/core_cm3.h **** 
+ 516:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_MEMFAULTENA_Pos          16U                                            /*!< SCB 
+ 517:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_MEMFAULTENA_Msk          (1UL << SCB_SHCSR_MEMFAULTENA_Pos)             /*!< SCB 
+ 518:CMSIS/Include/core_cm3.h **** 
+ 519:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_SVCALLPENDED_Pos         15U                                            /*!< SCB 
+ 520:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_SVCALLPENDED_Msk         (1UL << SCB_SHCSR_SVCALLPENDED_Pos)            /*!< SCB 
+ 521:CMSIS/Include/core_cm3.h **** 
+ 522:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_BUSFAULTPENDED_Pos       14U                                            /*!< SCB 
+ 523:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_BUSFAULTPENDED_Msk       (1UL << SCB_SHCSR_BUSFAULTPENDED_Pos)          /*!< SCB 
+ 524:CMSIS/Include/core_cm3.h **** 
+ 525:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_MEMFAULTPENDED_Pos       13U                                            /*!< SCB 
+ 526:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_MEMFAULTPENDED_Msk       (1UL << SCB_SHCSR_MEMFAULTPENDED_Pos)          /*!< SCB 
+ 527:CMSIS/Include/core_cm3.h **** 
+ 528:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_USGFAULTPENDED_Pos       12U                                            /*!< SCB 
+ 529:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_USGFAULTPENDED_Msk       (1UL << SCB_SHCSR_USGFAULTPENDED_Pos)          /*!< SCB 
+ 530:CMSIS/Include/core_cm3.h **** 
+ 531:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_SYSTICKACT_Pos           11U                                            /*!< SCB 
+ 532:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_SYSTICKACT_Msk           (1UL << SCB_SHCSR_SYSTICKACT_Pos)              /*!< SCB 
+ 533:CMSIS/Include/core_cm3.h **** 
+ 534:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_PENDSVACT_Pos            10U                                            /*!< SCB 
+ 535:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_PENDSVACT_Msk            (1UL << SCB_SHCSR_PENDSVACT_Pos)               /*!< SCB 
+ 536:CMSIS/Include/core_cm3.h **** 
+ 537:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_MONITORACT_Pos            8U                                            /*!< SCB 
+ 538:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_MONITORACT_Msk           (1UL << SCB_SHCSR_MONITORACT_Pos)              /*!< SCB 
+ 539:CMSIS/Include/core_cm3.h **** 
+ 540:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_SVCALLACT_Pos             7U                                            /*!< SCB 
+ 541:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_SVCALLACT_Msk            (1UL << SCB_SHCSR_SVCALLACT_Pos)               /*!< SCB 
+ 542:CMSIS/Include/core_cm3.h **** 
+ 543:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_USGFAULTACT_Pos           3U                                            /*!< SCB 
+ 544:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_USGFAULTACT_Msk          (1UL << SCB_SHCSR_USGFAULTACT_Pos)             /*!< SCB 
+ 545:CMSIS/Include/core_cm3.h **** 
+ 546:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_BUSFAULTACT_Pos           1U                                            /*!< SCB 
+ 547:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_BUSFAULTACT_Msk          (1UL << SCB_SHCSR_BUSFAULTACT_Pos)             /*!< SCB 
+ 548:CMSIS/Include/core_cm3.h **** 
+ 549:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_MEMFAULTACT_Pos           0U                                            /*!< SCB 
+ 550:CMSIS/Include/core_cm3.h **** #define SCB_SHCSR_MEMFAULTACT_Msk          (1UL /*<< SCB_SHCSR_MEMFAULTACT_Pos*/)         /*!< SCB 
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 20
+
+
+ 551:CMSIS/Include/core_cm3.h **** 
+ 552:CMSIS/Include/core_cm3.h **** /* SCB Configurable Fault Status Register Definitions */
+ 553:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_USGFAULTSR_Pos            16U                                            /*!< SCB 
+ 554:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_USGFAULTSR_Msk            (0xFFFFUL << SCB_CFSR_USGFAULTSR_Pos)          /*!< SCB 
+ 555:CMSIS/Include/core_cm3.h **** 
+ 556:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_BUSFAULTSR_Pos             8U                                            /*!< SCB 
+ 557:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_BUSFAULTSR_Msk            (0xFFUL << SCB_CFSR_BUSFAULTSR_Pos)            /*!< SCB 
+ 558:CMSIS/Include/core_cm3.h **** 
+ 559:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_MEMFAULTSR_Pos             0U                                            /*!< SCB 
+ 560:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_MEMFAULTSR_Msk            (0xFFUL /*<< SCB_CFSR_MEMFAULTSR_Pos*/)        /*!< SCB 
+ 561:CMSIS/Include/core_cm3.h **** 
+ 562:CMSIS/Include/core_cm3.h **** /* MemManage Fault Status Register (part of SCB Configurable Fault Status Register) */
+ 563:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_MMARVALID_Pos             (SCB_SHCSR_MEMFAULTACT_Pos + 7U)               /*!< SCB 
+ 564:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_MMARVALID_Msk             (1UL << SCB_CFSR_MMARVALID_Pos)                /*!< SCB 
+ 565:CMSIS/Include/core_cm3.h **** 
+ 566:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_MSTKERR_Pos               (SCB_SHCSR_MEMFAULTACT_Pos + 4U)               /*!< SCB 
+ 567:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_MSTKERR_Msk               (1UL << SCB_CFSR_MSTKERR_Pos)                  /*!< SCB 
+ 568:CMSIS/Include/core_cm3.h **** 
+ 569:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_MUNSTKERR_Pos             (SCB_SHCSR_MEMFAULTACT_Pos + 3U)               /*!< SCB 
+ 570:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_MUNSTKERR_Msk             (1UL << SCB_CFSR_MUNSTKERR_Pos)                /*!< SCB 
+ 571:CMSIS/Include/core_cm3.h **** 
+ 572:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_DACCVIOL_Pos              (SCB_SHCSR_MEMFAULTACT_Pos + 1U)               /*!< SCB 
+ 573:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_DACCVIOL_Msk              (1UL << SCB_CFSR_DACCVIOL_Pos)                 /*!< SCB 
+ 574:CMSIS/Include/core_cm3.h **** 
+ 575:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_IACCVIOL_Pos              (SCB_SHCSR_MEMFAULTACT_Pos + 0U)               /*!< SCB 
+ 576:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_IACCVIOL_Msk              (1UL /*<< SCB_CFSR_IACCVIOL_Pos*/)             /*!< SCB 
+ 577:CMSIS/Include/core_cm3.h **** 
+ 578:CMSIS/Include/core_cm3.h **** /* BusFault Status Register (part of SCB Configurable Fault Status Register) */
+ 579:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_BFARVALID_Pos            (SCB_CFSR_BUSFAULTSR_Pos + 7U)                  /*!< SCB 
+ 580:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_BFARVALID_Msk            (1UL << SCB_CFSR_BFARVALID_Pos)                 /*!< SCB 
+ 581:CMSIS/Include/core_cm3.h **** 
+ 582:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_STKERR_Pos               (SCB_CFSR_BUSFAULTSR_Pos + 4U)                  /*!< SCB 
+ 583:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_STKERR_Msk               (1UL << SCB_CFSR_STKERR_Pos)                    /*!< SCB 
+ 584:CMSIS/Include/core_cm3.h **** 
+ 585:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_UNSTKERR_Pos             (SCB_CFSR_BUSFAULTSR_Pos + 3U)                  /*!< SCB 
+ 586:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_UNSTKERR_Msk             (1UL << SCB_CFSR_UNSTKERR_Pos)                  /*!< SCB 
+ 587:CMSIS/Include/core_cm3.h **** 
+ 588:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_IMPRECISERR_Pos          (SCB_CFSR_BUSFAULTSR_Pos + 2U)                  /*!< SCB 
+ 589:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_IMPRECISERR_Msk          (1UL << SCB_CFSR_IMPRECISERR_Pos)               /*!< SCB 
+ 590:CMSIS/Include/core_cm3.h **** 
+ 591:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_PRECISERR_Pos            (SCB_CFSR_BUSFAULTSR_Pos + 1U)                  /*!< SCB 
+ 592:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_PRECISERR_Msk            (1UL << SCB_CFSR_PRECISERR_Pos)                 /*!< SCB 
+ 593:CMSIS/Include/core_cm3.h **** 
+ 594:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_IBUSERR_Pos              (SCB_CFSR_BUSFAULTSR_Pos + 0U)                  /*!< SCB 
+ 595:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_IBUSERR_Msk              (1UL << SCB_CFSR_IBUSERR_Pos)                   /*!< SCB 
+ 596:CMSIS/Include/core_cm3.h **** 
+ 597:CMSIS/Include/core_cm3.h **** /* UsageFault Status Register (part of SCB Configurable Fault Status Register) */
+ 598:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_DIVBYZERO_Pos            (SCB_CFSR_USGFAULTSR_Pos + 9U)                  /*!< SCB 
+ 599:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_DIVBYZERO_Msk            (1UL << SCB_CFSR_DIVBYZERO_Pos)                 /*!< SCB 
+ 600:CMSIS/Include/core_cm3.h **** 
+ 601:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_UNALIGNED_Pos            (SCB_CFSR_USGFAULTSR_Pos + 8U)                  /*!< SCB 
+ 602:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_UNALIGNED_Msk            (1UL << SCB_CFSR_UNALIGNED_Pos)                 /*!< SCB 
+ 603:CMSIS/Include/core_cm3.h **** 
+ 604:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_NOCP_Pos                 (SCB_CFSR_USGFAULTSR_Pos + 3U)                  /*!< SCB 
+ 605:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_NOCP_Msk                 (1UL << SCB_CFSR_NOCP_Pos)                      /*!< SCB 
+ 606:CMSIS/Include/core_cm3.h **** 
+ 607:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_INVPC_Pos                (SCB_CFSR_USGFAULTSR_Pos + 2U)                  /*!< SCB 
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 21
+
+
+ 608:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_INVPC_Msk                (1UL << SCB_CFSR_INVPC_Pos)                     /*!< SCB 
+ 609:CMSIS/Include/core_cm3.h **** 
+ 610:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_INVSTATE_Pos             (SCB_CFSR_USGFAULTSR_Pos + 1U)                  /*!< SCB 
+ 611:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_INVSTATE_Msk             (1UL << SCB_CFSR_INVSTATE_Pos)                  /*!< SCB 
+ 612:CMSIS/Include/core_cm3.h **** 
+ 613:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_UNDEFINSTR_Pos           (SCB_CFSR_USGFAULTSR_Pos + 0U)                  /*!< SCB 
+ 614:CMSIS/Include/core_cm3.h **** #define SCB_CFSR_UNDEFINSTR_Msk           (1UL << SCB_CFSR_UNDEFINSTR_Pos)                /*!< SCB 
+ 615:CMSIS/Include/core_cm3.h **** 
+ 616:CMSIS/Include/core_cm3.h **** /* SCB Hard Fault Status Register Definitions */
+ 617:CMSIS/Include/core_cm3.h **** #define SCB_HFSR_DEBUGEVT_Pos              31U                                            /*!< SCB 
+ 618:CMSIS/Include/core_cm3.h **** #define SCB_HFSR_DEBUGEVT_Msk              (1UL << SCB_HFSR_DEBUGEVT_Pos)                 /*!< SCB 
+ 619:CMSIS/Include/core_cm3.h **** 
+ 620:CMSIS/Include/core_cm3.h **** #define SCB_HFSR_FORCED_Pos                30U                                            /*!< SCB 
+ 621:CMSIS/Include/core_cm3.h **** #define SCB_HFSR_FORCED_Msk                (1UL << SCB_HFSR_FORCED_Pos)                   /*!< SCB 
+ 622:CMSIS/Include/core_cm3.h **** 
+ 623:CMSIS/Include/core_cm3.h **** #define SCB_HFSR_VECTTBL_Pos                1U                                            /*!< SCB 
+ 624:CMSIS/Include/core_cm3.h **** #define SCB_HFSR_VECTTBL_Msk               (1UL << SCB_HFSR_VECTTBL_Pos)                  /*!< SCB 
+ 625:CMSIS/Include/core_cm3.h **** 
+ 626:CMSIS/Include/core_cm3.h **** /* SCB Debug Fault Status Register Definitions */
+ 627:CMSIS/Include/core_cm3.h **** #define SCB_DFSR_EXTERNAL_Pos               4U                                            /*!< SCB 
+ 628:CMSIS/Include/core_cm3.h **** #define SCB_DFSR_EXTERNAL_Msk              (1UL << SCB_DFSR_EXTERNAL_Pos)                 /*!< SCB 
+ 629:CMSIS/Include/core_cm3.h **** 
+ 630:CMSIS/Include/core_cm3.h **** #define SCB_DFSR_VCATCH_Pos                 3U                                            /*!< SCB 
+ 631:CMSIS/Include/core_cm3.h **** #define SCB_DFSR_VCATCH_Msk                (1UL << SCB_DFSR_VCATCH_Pos)                   /*!< SCB 
+ 632:CMSIS/Include/core_cm3.h **** 
+ 633:CMSIS/Include/core_cm3.h **** #define SCB_DFSR_DWTTRAP_Pos                2U                                            /*!< SCB 
+ 634:CMSIS/Include/core_cm3.h **** #define SCB_DFSR_DWTTRAP_Msk               (1UL << SCB_DFSR_DWTTRAP_Pos)                  /*!< SCB 
+ 635:CMSIS/Include/core_cm3.h **** 
+ 636:CMSIS/Include/core_cm3.h **** #define SCB_DFSR_BKPT_Pos                   1U                                            /*!< SCB 
+ 637:CMSIS/Include/core_cm3.h **** #define SCB_DFSR_BKPT_Msk                  (1UL << SCB_DFSR_BKPT_Pos)                     /*!< SCB 
+ 638:CMSIS/Include/core_cm3.h **** 
+ 639:CMSIS/Include/core_cm3.h **** #define SCB_DFSR_HALTED_Pos                 0U                                            /*!< SCB 
+ 640:CMSIS/Include/core_cm3.h **** #define SCB_DFSR_HALTED_Msk                (1UL /*<< SCB_DFSR_HALTED_Pos*/)               /*!< SCB 
+ 641:CMSIS/Include/core_cm3.h **** 
+ 642:CMSIS/Include/core_cm3.h **** /*@} end of group CMSIS_SCB */
+ 643:CMSIS/Include/core_cm3.h **** 
+ 644:CMSIS/Include/core_cm3.h **** 
+ 645:CMSIS/Include/core_cm3.h **** /**
+ 646:CMSIS/Include/core_cm3.h ****   \ingroup  CMSIS_core_register
+ 647:CMSIS/Include/core_cm3.h ****   \defgroup CMSIS_SCnSCB System Controls not in SCB (SCnSCB)
+ 648:CMSIS/Include/core_cm3.h ****   \brief    Type definitions for the System Control and ID Register not in the SCB
+ 649:CMSIS/Include/core_cm3.h ****   @{
+ 650:CMSIS/Include/core_cm3.h ****  */
+ 651:CMSIS/Include/core_cm3.h **** 
+ 652:CMSIS/Include/core_cm3.h **** /**
+ 653:CMSIS/Include/core_cm3.h ****   \brief  Structure type to access the System Control and ID Register not in the SCB.
+ 654:CMSIS/Include/core_cm3.h ****  */
+ 655:CMSIS/Include/core_cm3.h **** typedef struct
+ 656:CMSIS/Include/core_cm3.h **** {
+ 657:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED0[1U];
+ 658:CMSIS/Include/core_cm3.h ****   __IM  uint32_t ICTR;                   /*!< Offset: 0x004 (R/ )  Interrupt Controller Type Regist
+ 659:CMSIS/Include/core_cm3.h **** #if defined (__CM3_REV) && (__CM3_REV >= 0x200U)
+ 660:CMSIS/Include/core_cm3.h ****   __IOM uint32_t ACTLR;                  /*!< Offset: 0x008 (R/W)  Auxiliary Control Register */
+ 661:CMSIS/Include/core_cm3.h **** #else
+ 662:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED1[1U];
+ 663:CMSIS/Include/core_cm3.h **** #endif
+ 664:CMSIS/Include/core_cm3.h **** } SCnSCB_Type;
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 22
+
+
+ 665:CMSIS/Include/core_cm3.h **** 
+ 666:CMSIS/Include/core_cm3.h **** /* Interrupt Controller Type Register Definitions */
+ 667:CMSIS/Include/core_cm3.h **** #define SCnSCB_ICTR_INTLINESNUM_Pos         0U                                         /*!< ICTR: I
+ 668:CMSIS/Include/core_cm3.h **** #define SCnSCB_ICTR_INTLINESNUM_Msk        (0xFUL /*<< SCnSCB_ICTR_INTLINESNUM_Pos*/)  /*!< ICTR: I
+ 669:CMSIS/Include/core_cm3.h **** 
+ 670:CMSIS/Include/core_cm3.h **** /* Auxiliary Control Register Definitions */
+ 671:CMSIS/Include/core_cm3.h **** 
+ 672:CMSIS/Include/core_cm3.h **** #define SCnSCB_ACTLR_DISFOLD_Pos            2U                                         /*!< ACTLR: 
+ 673:CMSIS/Include/core_cm3.h **** #define SCnSCB_ACTLR_DISFOLD_Msk           (1UL << SCnSCB_ACTLR_DISFOLD_Pos)           /*!< ACTLR: 
+ 674:CMSIS/Include/core_cm3.h **** 
+ 675:CMSIS/Include/core_cm3.h **** #define SCnSCB_ACTLR_DISDEFWBUF_Pos         1U                                         /*!< ACTLR: 
+ 676:CMSIS/Include/core_cm3.h **** #define SCnSCB_ACTLR_DISDEFWBUF_Msk        (1UL << SCnSCB_ACTLR_DISDEFWBUF_Pos)        /*!< ACTLR: 
+ 677:CMSIS/Include/core_cm3.h **** 
+ 678:CMSIS/Include/core_cm3.h **** #define SCnSCB_ACTLR_DISMCYCINT_Pos         0U                                         /*!< ACTLR: 
+ 679:CMSIS/Include/core_cm3.h **** #define SCnSCB_ACTLR_DISMCYCINT_Msk        (1UL /*<< SCnSCB_ACTLR_DISMCYCINT_Pos*/)    /*!< ACTLR: 
+ 680:CMSIS/Include/core_cm3.h **** 
+ 681:CMSIS/Include/core_cm3.h **** /*@} end of group CMSIS_SCnotSCB */
+ 682:CMSIS/Include/core_cm3.h **** 
+ 683:CMSIS/Include/core_cm3.h **** 
+ 684:CMSIS/Include/core_cm3.h **** /**
+ 685:CMSIS/Include/core_cm3.h ****   \ingroup  CMSIS_core_register
+ 686:CMSIS/Include/core_cm3.h ****   \defgroup CMSIS_SysTick     System Tick Timer (SysTick)
+ 687:CMSIS/Include/core_cm3.h ****   \brief    Type definitions for the System Timer Registers.
+ 688:CMSIS/Include/core_cm3.h ****   @{
+ 689:CMSIS/Include/core_cm3.h ****  */
+ 690:CMSIS/Include/core_cm3.h **** 
+ 691:CMSIS/Include/core_cm3.h **** /**
+ 692:CMSIS/Include/core_cm3.h ****   \brief  Structure type to access the System Timer (SysTick).
+ 693:CMSIS/Include/core_cm3.h ****  */
+ 694:CMSIS/Include/core_cm3.h **** typedef struct
+ 695:CMSIS/Include/core_cm3.h **** {
+ 696:CMSIS/Include/core_cm3.h ****   __IOM uint32_t CTRL;                   /*!< Offset: 0x000 (R/W)  SysTick Control and Status Regis
+ 697:CMSIS/Include/core_cm3.h ****   __IOM uint32_t LOAD;                   /*!< Offset: 0x004 (R/W)  SysTick Reload Value Register */
+ 698:CMSIS/Include/core_cm3.h ****   __IOM uint32_t VAL;                    /*!< Offset: 0x008 (R/W)  SysTick Current Value Register *
+ 699:CMSIS/Include/core_cm3.h ****   __IM  uint32_t CALIB;                  /*!< Offset: 0x00C (R/ )  SysTick Calibration Register */
+ 700:CMSIS/Include/core_cm3.h **** } SysTick_Type;
+ 701:CMSIS/Include/core_cm3.h **** 
+ 702:CMSIS/Include/core_cm3.h **** /* SysTick Control / Status Register Definitions */
+ 703:CMSIS/Include/core_cm3.h **** #define SysTick_CTRL_COUNTFLAG_Pos         16U                                            /*!< SysT
+ 704:CMSIS/Include/core_cm3.h **** #define SysTick_CTRL_COUNTFLAG_Msk         (1UL << SysTick_CTRL_COUNTFLAG_Pos)            /*!< SysT
+ 705:CMSIS/Include/core_cm3.h **** 
+ 706:CMSIS/Include/core_cm3.h **** #define SysTick_CTRL_CLKSOURCE_Pos          2U                                            /*!< SysT
+ 707:CMSIS/Include/core_cm3.h **** #define SysTick_CTRL_CLKSOURCE_Msk         (1UL << SysTick_CTRL_CLKSOURCE_Pos)            /*!< SysT
+ 708:CMSIS/Include/core_cm3.h **** 
+ 709:CMSIS/Include/core_cm3.h **** #define SysTick_CTRL_TICKINT_Pos            1U                                            /*!< SysT
+ 710:CMSIS/Include/core_cm3.h **** #define SysTick_CTRL_TICKINT_Msk           (1UL << SysTick_CTRL_TICKINT_Pos)              /*!< SysT
+ 711:CMSIS/Include/core_cm3.h **** 
+ 712:CMSIS/Include/core_cm3.h **** #define SysTick_CTRL_ENABLE_Pos             0U                                            /*!< SysT
+ 713:CMSIS/Include/core_cm3.h **** #define SysTick_CTRL_ENABLE_Msk            (1UL /*<< SysTick_CTRL_ENABLE_Pos*/)           /*!< SysT
+ 714:CMSIS/Include/core_cm3.h **** 
+ 715:CMSIS/Include/core_cm3.h **** /* SysTick Reload Register Definitions */
+ 716:CMSIS/Include/core_cm3.h **** #define SysTick_LOAD_RELOAD_Pos             0U                                            /*!< SysT
+ 717:CMSIS/Include/core_cm3.h **** #define SysTick_LOAD_RELOAD_Msk            (0xFFFFFFUL /*<< SysTick_LOAD_RELOAD_Pos*/)    /*!< SysT
+ 718:CMSIS/Include/core_cm3.h **** 
+ 719:CMSIS/Include/core_cm3.h **** /* SysTick Current Register Definitions */
+ 720:CMSIS/Include/core_cm3.h **** #define SysTick_VAL_CURRENT_Pos             0U                                            /*!< SysT
+ 721:CMSIS/Include/core_cm3.h **** #define SysTick_VAL_CURRENT_Msk            (0xFFFFFFUL /*<< SysTick_VAL_CURRENT_Pos*/)    /*!< SysT
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 23
+
+
+ 722:CMSIS/Include/core_cm3.h **** 
+ 723:CMSIS/Include/core_cm3.h **** /* SysTick Calibration Register Definitions */
+ 724:CMSIS/Include/core_cm3.h **** #define SysTick_CALIB_NOREF_Pos            31U                                            /*!< SysT
+ 725:CMSIS/Include/core_cm3.h **** #define SysTick_CALIB_NOREF_Msk            (1UL << SysTick_CALIB_NOREF_Pos)               /*!< SysT
+ 726:CMSIS/Include/core_cm3.h **** 
+ 727:CMSIS/Include/core_cm3.h **** #define SysTick_CALIB_SKEW_Pos             30U                                            /*!< SysT
+ 728:CMSIS/Include/core_cm3.h **** #define SysTick_CALIB_SKEW_Msk             (1UL << SysTick_CALIB_SKEW_Pos)                /*!< SysT
+ 729:CMSIS/Include/core_cm3.h **** 
+ 730:CMSIS/Include/core_cm3.h **** #define SysTick_CALIB_TENMS_Pos             0U                                            /*!< SysT
+ 731:CMSIS/Include/core_cm3.h **** #define SysTick_CALIB_TENMS_Msk            (0xFFFFFFUL /*<< SysTick_CALIB_TENMS_Pos*/)    /*!< SysT
+ 732:CMSIS/Include/core_cm3.h **** 
+ 733:CMSIS/Include/core_cm3.h **** /*@} end of group CMSIS_SysTick */
+ 734:CMSIS/Include/core_cm3.h **** 
+ 735:CMSIS/Include/core_cm3.h **** 
+ 736:CMSIS/Include/core_cm3.h **** /**
+ 737:CMSIS/Include/core_cm3.h ****   \ingroup  CMSIS_core_register
+ 738:CMSIS/Include/core_cm3.h ****   \defgroup CMSIS_ITM     Instrumentation Trace Macrocell (ITM)
+ 739:CMSIS/Include/core_cm3.h ****   \brief    Type definitions for the Instrumentation Trace Macrocell (ITM)
+ 740:CMSIS/Include/core_cm3.h ****   @{
+ 741:CMSIS/Include/core_cm3.h ****  */
+ 742:CMSIS/Include/core_cm3.h **** 
+ 743:CMSIS/Include/core_cm3.h **** /**
+ 744:CMSIS/Include/core_cm3.h ****   \brief  Structure type to access the Instrumentation Trace Macrocell Register (ITM).
+ 745:CMSIS/Include/core_cm3.h ****  */
+ 746:CMSIS/Include/core_cm3.h **** typedef struct
+ 747:CMSIS/Include/core_cm3.h **** {
+ 748:CMSIS/Include/core_cm3.h ****   __OM  union
+ 749:CMSIS/Include/core_cm3.h ****   {
+ 750:CMSIS/Include/core_cm3.h ****     __OM  uint8_t    u8;                 /*!< Offset: 0x000 ( /W)  ITM Stimulus Port 8-bit */
+ 751:CMSIS/Include/core_cm3.h ****     __OM  uint16_t   u16;                /*!< Offset: 0x000 ( /W)  ITM Stimulus Port 16-bit */
+ 752:CMSIS/Include/core_cm3.h ****     __OM  uint32_t   u32;                /*!< Offset: 0x000 ( /W)  ITM Stimulus Port 32-bit */
+ 753:CMSIS/Include/core_cm3.h ****   }  PORT [32U];                         /*!< Offset: 0x000 ( /W)  ITM Stimulus Port Registers */
+ 754:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED0[864U];
+ 755:CMSIS/Include/core_cm3.h ****   __IOM uint32_t TER;                    /*!< Offset: 0xE00 (R/W)  ITM Trace Enable Register */
+ 756:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED1[15U];
+ 757:CMSIS/Include/core_cm3.h ****   __IOM uint32_t TPR;                    /*!< Offset: 0xE40 (R/W)  ITM Trace Privilege Register */
+ 758:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED2[15U];
+ 759:CMSIS/Include/core_cm3.h ****   __IOM uint32_t TCR;                    /*!< Offset: 0xE80 (R/W)  ITM Trace Control Register */
+ 760:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED3[29U];
+ 761:CMSIS/Include/core_cm3.h ****   __OM  uint32_t IWR;                    /*!< Offset: 0xEF8 ( /W)  ITM Integration Write Register *
+ 762:CMSIS/Include/core_cm3.h ****   __IM  uint32_t IRR;                    /*!< Offset: 0xEFC (R/ )  ITM Integration Read Register */
+ 763:CMSIS/Include/core_cm3.h ****   __IOM uint32_t IMCR;                   /*!< Offset: 0xF00 (R/W)  ITM Integration Mode Control Reg
+ 764:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED4[43U];
+ 765:CMSIS/Include/core_cm3.h ****   __OM  uint32_t LAR;                    /*!< Offset: 0xFB0 ( /W)  ITM Lock Access Register */
+ 766:CMSIS/Include/core_cm3.h ****   __IM  uint32_t LSR;                    /*!< Offset: 0xFB4 (R/ )  ITM Lock Status Register */
+ 767:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED5[6U];
+ 768:CMSIS/Include/core_cm3.h ****   __IM  uint32_t PID4;                   /*!< Offset: 0xFD0 (R/ )  ITM Peripheral Identification Re
+ 769:CMSIS/Include/core_cm3.h ****   __IM  uint32_t PID5;                   /*!< Offset: 0xFD4 (R/ )  ITM Peripheral Identification Re
+ 770:CMSIS/Include/core_cm3.h ****   __IM  uint32_t PID6;                   /*!< Offset: 0xFD8 (R/ )  ITM Peripheral Identification Re
+ 771:CMSIS/Include/core_cm3.h ****   __IM  uint32_t PID7;                   /*!< Offset: 0xFDC (R/ )  ITM Peripheral Identification Re
+ 772:CMSIS/Include/core_cm3.h ****   __IM  uint32_t PID0;                   /*!< Offset: 0xFE0 (R/ )  ITM Peripheral Identification Re
+ 773:CMSIS/Include/core_cm3.h ****   __IM  uint32_t PID1;                   /*!< Offset: 0xFE4 (R/ )  ITM Peripheral Identification Re
+ 774:CMSIS/Include/core_cm3.h ****   __IM  uint32_t PID2;                   /*!< Offset: 0xFE8 (R/ )  ITM Peripheral Identification Re
+ 775:CMSIS/Include/core_cm3.h ****   __IM  uint32_t PID3;                   /*!< Offset: 0xFEC (R/ )  ITM Peripheral Identification Re
+ 776:CMSIS/Include/core_cm3.h ****   __IM  uint32_t CID0;                   /*!< Offset: 0xFF0 (R/ )  ITM Component  Identification Re
+ 777:CMSIS/Include/core_cm3.h ****   __IM  uint32_t CID1;                   /*!< Offset: 0xFF4 (R/ )  ITM Component  Identification Re
+ 778:CMSIS/Include/core_cm3.h ****   __IM  uint32_t CID2;                   /*!< Offset: 0xFF8 (R/ )  ITM Component  Identification Re
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 24
+
+
+ 779:CMSIS/Include/core_cm3.h ****   __IM  uint32_t CID3;                   /*!< Offset: 0xFFC (R/ )  ITM Component  Identification Re
+ 780:CMSIS/Include/core_cm3.h **** } ITM_Type;
+ 781:CMSIS/Include/core_cm3.h **** 
+ 782:CMSIS/Include/core_cm3.h **** /* ITM Trace Privilege Register Definitions */
+ 783:CMSIS/Include/core_cm3.h **** #define ITM_TPR_PRIVMASK_Pos                0U                                            /*!< ITM 
+ 784:CMSIS/Include/core_cm3.h **** #define ITM_TPR_PRIVMASK_Msk               (0xFFFFFFFFUL /*<< ITM_TPR_PRIVMASK_Pos*/)     /*!< ITM 
+ 785:CMSIS/Include/core_cm3.h **** 
+ 786:CMSIS/Include/core_cm3.h **** /* ITM Trace Control Register Definitions */
+ 787:CMSIS/Include/core_cm3.h **** #define ITM_TCR_BUSY_Pos                   23U                                            /*!< ITM 
+ 788:CMSIS/Include/core_cm3.h **** #define ITM_TCR_BUSY_Msk                   (1UL << ITM_TCR_BUSY_Pos)                      /*!< ITM 
+ 789:CMSIS/Include/core_cm3.h **** 
+ 790:CMSIS/Include/core_cm3.h **** #define ITM_TCR_TraceBusID_Pos             16U                                            /*!< ITM 
+ 791:CMSIS/Include/core_cm3.h **** #define ITM_TCR_TraceBusID_Msk             (0x7FUL << ITM_TCR_TraceBusID_Pos)             /*!< ITM 
+ 792:CMSIS/Include/core_cm3.h **** 
+ 793:CMSIS/Include/core_cm3.h **** #define ITM_TCR_GTSFREQ_Pos                10U                                            /*!< ITM 
+ 794:CMSIS/Include/core_cm3.h **** #define ITM_TCR_GTSFREQ_Msk                (3UL << ITM_TCR_GTSFREQ_Pos)                   /*!< ITM 
+ 795:CMSIS/Include/core_cm3.h **** 
+ 796:CMSIS/Include/core_cm3.h **** #define ITM_TCR_TSPrescale_Pos              8U                                            /*!< ITM 
+ 797:CMSIS/Include/core_cm3.h **** #define ITM_TCR_TSPrescale_Msk             (3UL << ITM_TCR_TSPrescale_Pos)                /*!< ITM 
+ 798:CMSIS/Include/core_cm3.h **** 
+ 799:CMSIS/Include/core_cm3.h **** #define ITM_TCR_SWOENA_Pos                  4U                                            /*!< ITM 
+ 800:CMSIS/Include/core_cm3.h **** #define ITM_TCR_SWOENA_Msk                 (1UL << ITM_TCR_SWOENA_Pos)                    /*!< ITM 
+ 801:CMSIS/Include/core_cm3.h **** 
+ 802:CMSIS/Include/core_cm3.h **** #define ITM_TCR_DWTENA_Pos                  3U                                            /*!< ITM 
+ 803:CMSIS/Include/core_cm3.h **** #define ITM_TCR_DWTENA_Msk                 (1UL << ITM_TCR_DWTENA_Pos)                    /*!< ITM 
+ 804:CMSIS/Include/core_cm3.h **** 
+ 805:CMSIS/Include/core_cm3.h **** #define ITM_TCR_SYNCENA_Pos                 2U                                            /*!< ITM 
+ 806:CMSIS/Include/core_cm3.h **** #define ITM_TCR_SYNCENA_Msk                (1UL << ITM_TCR_SYNCENA_Pos)                   /*!< ITM 
+ 807:CMSIS/Include/core_cm3.h **** 
+ 808:CMSIS/Include/core_cm3.h **** #define ITM_TCR_TSENA_Pos                   1U                                            /*!< ITM 
+ 809:CMSIS/Include/core_cm3.h **** #define ITM_TCR_TSENA_Msk                  (1UL << ITM_TCR_TSENA_Pos)                     /*!< ITM 
+ 810:CMSIS/Include/core_cm3.h **** 
+ 811:CMSIS/Include/core_cm3.h **** #define ITM_TCR_ITMENA_Pos                  0U                                            /*!< ITM 
+ 812:CMSIS/Include/core_cm3.h **** #define ITM_TCR_ITMENA_Msk                 (1UL /*<< ITM_TCR_ITMENA_Pos*/)                /*!< ITM 
+ 813:CMSIS/Include/core_cm3.h **** 
+ 814:CMSIS/Include/core_cm3.h **** /* ITM Integration Write Register Definitions */
+ 815:CMSIS/Include/core_cm3.h **** #define ITM_IWR_ATVALIDM_Pos                0U                                            /*!< ITM 
+ 816:CMSIS/Include/core_cm3.h **** #define ITM_IWR_ATVALIDM_Msk               (1UL /*<< ITM_IWR_ATVALIDM_Pos*/)              /*!< ITM 
+ 817:CMSIS/Include/core_cm3.h **** 
+ 818:CMSIS/Include/core_cm3.h **** /* ITM Integration Read Register Definitions */
+ 819:CMSIS/Include/core_cm3.h **** #define ITM_IRR_ATREADYM_Pos                0U                                            /*!< ITM 
+ 820:CMSIS/Include/core_cm3.h **** #define ITM_IRR_ATREADYM_Msk               (1UL /*<< ITM_IRR_ATREADYM_Pos*/)              /*!< ITM 
+ 821:CMSIS/Include/core_cm3.h **** 
+ 822:CMSIS/Include/core_cm3.h **** /* ITM Integration Mode Control Register Definitions */
+ 823:CMSIS/Include/core_cm3.h **** #define ITM_IMCR_INTEGRATION_Pos            0U                                            /*!< ITM 
+ 824:CMSIS/Include/core_cm3.h **** #define ITM_IMCR_INTEGRATION_Msk           (1UL /*<< ITM_IMCR_INTEGRATION_Pos*/)          /*!< ITM 
+ 825:CMSIS/Include/core_cm3.h **** 
+ 826:CMSIS/Include/core_cm3.h **** /* ITM Lock Status Register Definitions */
+ 827:CMSIS/Include/core_cm3.h **** #define ITM_LSR_ByteAcc_Pos                 2U                                            /*!< ITM 
+ 828:CMSIS/Include/core_cm3.h **** #define ITM_LSR_ByteAcc_Msk                (1UL << ITM_LSR_ByteAcc_Pos)                   /*!< ITM 
+ 829:CMSIS/Include/core_cm3.h **** 
+ 830:CMSIS/Include/core_cm3.h **** #define ITM_LSR_Access_Pos                  1U                                            /*!< ITM 
+ 831:CMSIS/Include/core_cm3.h **** #define ITM_LSR_Access_Msk                 (1UL << ITM_LSR_Access_Pos)                    /*!< ITM 
+ 832:CMSIS/Include/core_cm3.h **** 
+ 833:CMSIS/Include/core_cm3.h **** #define ITM_LSR_Present_Pos                 0U                                            /*!< ITM 
+ 834:CMSIS/Include/core_cm3.h **** #define ITM_LSR_Present_Msk                (1UL /*<< ITM_LSR_Present_Pos*/)               /*!< ITM 
+ 835:CMSIS/Include/core_cm3.h **** 
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 25
+
+
+ 836:CMSIS/Include/core_cm3.h **** /*@}*/ /* end of group CMSIS_ITM */
+ 837:CMSIS/Include/core_cm3.h **** 
+ 838:CMSIS/Include/core_cm3.h **** 
+ 839:CMSIS/Include/core_cm3.h **** /**
+ 840:CMSIS/Include/core_cm3.h ****   \ingroup  CMSIS_core_register
+ 841:CMSIS/Include/core_cm3.h ****   \defgroup CMSIS_DWT     Data Watchpoint and Trace (DWT)
+ 842:CMSIS/Include/core_cm3.h ****   \brief    Type definitions for the Data Watchpoint and Trace (DWT)
+ 843:CMSIS/Include/core_cm3.h ****   @{
+ 844:CMSIS/Include/core_cm3.h ****  */
+ 845:CMSIS/Include/core_cm3.h **** 
+ 846:CMSIS/Include/core_cm3.h **** /**
+ 847:CMSIS/Include/core_cm3.h ****   \brief  Structure type to access the Data Watchpoint and Trace Register (DWT).
+ 848:CMSIS/Include/core_cm3.h ****  */
+ 849:CMSIS/Include/core_cm3.h **** typedef struct
+ 850:CMSIS/Include/core_cm3.h **** {
+ 851:CMSIS/Include/core_cm3.h ****   __IOM uint32_t CTRL;                   /*!< Offset: 0x000 (R/W)  Control Register */
+ 852:CMSIS/Include/core_cm3.h ****   __IOM uint32_t CYCCNT;                 /*!< Offset: 0x004 (R/W)  Cycle Count Register */
+ 853:CMSIS/Include/core_cm3.h ****   __IOM uint32_t CPICNT;                 /*!< Offset: 0x008 (R/W)  CPI Count Register */
+ 854:CMSIS/Include/core_cm3.h ****   __IOM uint32_t EXCCNT;                 /*!< Offset: 0x00C (R/W)  Exception Overhead Count Registe
+ 855:CMSIS/Include/core_cm3.h ****   __IOM uint32_t SLEEPCNT;               /*!< Offset: 0x010 (R/W)  Sleep Count Register */
+ 856:CMSIS/Include/core_cm3.h ****   __IOM uint32_t LSUCNT;                 /*!< Offset: 0x014 (R/W)  LSU Count Register */
+ 857:CMSIS/Include/core_cm3.h ****   __IOM uint32_t FOLDCNT;                /*!< Offset: 0x018 (R/W)  Folded-instruction Count Registe
+ 858:CMSIS/Include/core_cm3.h ****   __IM  uint32_t PCSR;                   /*!< Offset: 0x01C (R/ )  Program Counter Sample Register 
+ 859:CMSIS/Include/core_cm3.h ****   __IOM uint32_t COMP0;                  /*!< Offset: 0x020 (R/W)  Comparator Register 0 */
+ 860:CMSIS/Include/core_cm3.h ****   __IOM uint32_t MASK0;                  /*!< Offset: 0x024 (R/W)  Mask Register 0 */
+ 861:CMSIS/Include/core_cm3.h ****   __IOM uint32_t FUNCTION0;              /*!< Offset: 0x028 (R/W)  Function Register 0 */
+ 862:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED0[1U];
+ 863:CMSIS/Include/core_cm3.h ****   __IOM uint32_t COMP1;                  /*!< Offset: 0x030 (R/W)  Comparator Register 1 */
+ 864:CMSIS/Include/core_cm3.h ****   __IOM uint32_t MASK1;                  /*!< Offset: 0x034 (R/W)  Mask Register 1 */
+ 865:CMSIS/Include/core_cm3.h ****   __IOM uint32_t FUNCTION1;              /*!< Offset: 0x038 (R/W)  Function Register 1 */
+ 866:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED1[1U];
+ 867:CMSIS/Include/core_cm3.h ****   __IOM uint32_t COMP2;                  /*!< Offset: 0x040 (R/W)  Comparator Register 2 */
+ 868:CMSIS/Include/core_cm3.h ****   __IOM uint32_t MASK2;                  /*!< Offset: 0x044 (R/W)  Mask Register 2 */
+ 869:CMSIS/Include/core_cm3.h ****   __IOM uint32_t FUNCTION2;              /*!< Offset: 0x048 (R/W)  Function Register 2 */
+ 870:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED2[1U];
+ 871:CMSIS/Include/core_cm3.h ****   __IOM uint32_t COMP3;                  /*!< Offset: 0x050 (R/W)  Comparator Register 3 */
+ 872:CMSIS/Include/core_cm3.h ****   __IOM uint32_t MASK3;                  /*!< Offset: 0x054 (R/W)  Mask Register 3 */
+ 873:CMSIS/Include/core_cm3.h ****   __IOM uint32_t FUNCTION3;              /*!< Offset: 0x058 (R/W)  Function Register 3 */
+ 874:CMSIS/Include/core_cm3.h **** } DWT_Type;
+ 875:CMSIS/Include/core_cm3.h **** 
+ 876:CMSIS/Include/core_cm3.h **** /* DWT Control Register Definitions */
+ 877:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_NUMCOMP_Pos               28U                                         /*!< DWT CTR
+ 878:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_NUMCOMP_Msk               (0xFUL << DWT_CTRL_NUMCOMP_Pos)             /*!< DWT CTR
+ 879:CMSIS/Include/core_cm3.h **** 
+ 880:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_NOTRCPKT_Pos              27U                                         /*!< DWT CTR
+ 881:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_NOTRCPKT_Msk              (0x1UL << DWT_CTRL_NOTRCPKT_Pos)            /*!< DWT CTR
+ 882:CMSIS/Include/core_cm3.h **** 
+ 883:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_NOEXTTRIG_Pos             26U                                         /*!< DWT CTR
+ 884:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_NOEXTTRIG_Msk             (0x1UL << DWT_CTRL_NOEXTTRIG_Pos)           /*!< DWT CTR
+ 885:CMSIS/Include/core_cm3.h **** 
+ 886:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_NOCYCCNT_Pos              25U                                         /*!< DWT CTR
+ 887:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_NOCYCCNT_Msk              (0x1UL << DWT_CTRL_NOCYCCNT_Pos)            /*!< DWT CTR
+ 888:CMSIS/Include/core_cm3.h **** 
+ 889:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_NOPRFCNT_Pos              24U                                         /*!< DWT CTR
+ 890:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_NOPRFCNT_Msk              (0x1UL << DWT_CTRL_NOPRFCNT_Pos)            /*!< DWT CTR
+ 891:CMSIS/Include/core_cm3.h **** 
+ 892:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_CYCEVTENA_Pos             22U                                         /*!< DWT CTR
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 26
+
+
+ 893:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_CYCEVTENA_Msk             (0x1UL << DWT_CTRL_CYCEVTENA_Pos)           /*!< DWT CTR
+ 894:CMSIS/Include/core_cm3.h **** 
+ 895:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_FOLDEVTENA_Pos            21U                                         /*!< DWT CTR
+ 896:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_FOLDEVTENA_Msk            (0x1UL << DWT_CTRL_FOLDEVTENA_Pos)          /*!< DWT CTR
+ 897:CMSIS/Include/core_cm3.h **** 
+ 898:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_LSUEVTENA_Pos             20U                                         /*!< DWT CTR
+ 899:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_LSUEVTENA_Msk             (0x1UL << DWT_CTRL_LSUEVTENA_Pos)           /*!< DWT CTR
+ 900:CMSIS/Include/core_cm3.h **** 
+ 901:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_SLEEPEVTENA_Pos           19U                                         /*!< DWT CTR
+ 902:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_SLEEPEVTENA_Msk           (0x1UL << DWT_CTRL_SLEEPEVTENA_Pos)         /*!< DWT CTR
+ 903:CMSIS/Include/core_cm3.h **** 
+ 904:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_EXCEVTENA_Pos             18U                                         /*!< DWT CTR
+ 905:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_EXCEVTENA_Msk             (0x1UL << DWT_CTRL_EXCEVTENA_Pos)           /*!< DWT CTR
+ 906:CMSIS/Include/core_cm3.h **** 
+ 907:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_CPIEVTENA_Pos             17U                                         /*!< DWT CTR
+ 908:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_CPIEVTENA_Msk             (0x1UL << DWT_CTRL_CPIEVTENA_Pos)           /*!< DWT CTR
+ 909:CMSIS/Include/core_cm3.h **** 
+ 910:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_EXCTRCENA_Pos             16U                                         /*!< DWT CTR
+ 911:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_EXCTRCENA_Msk             (0x1UL << DWT_CTRL_EXCTRCENA_Pos)           /*!< DWT CTR
+ 912:CMSIS/Include/core_cm3.h **** 
+ 913:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_PCSAMPLENA_Pos            12U                                         /*!< DWT CTR
+ 914:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_PCSAMPLENA_Msk            (0x1UL << DWT_CTRL_PCSAMPLENA_Pos)          /*!< DWT CTR
+ 915:CMSIS/Include/core_cm3.h **** 
+ 916:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_SYNCTAP_Pos               10U                                         /*!< DWT CTR
+ 917:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_SYNCTAP_Msk               (0x3UL << DWT_CTRL_SYNCTAP_Pos)             /*!< DWT CTR
+ 918:CMSIS/Include/core_cm3.h **** 
+ 919:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_CYCTAP_Pos                 9U                                         /*!< DWT CTR
+ 920:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_CYCTAP_Msk                (0x1UL << DWT_CTRL_CYCTAP_Pos)              /*!< DWT CTR
+ 921:CMSIS/Include/core_cm3.h **** 
+ 922:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_POSTINIT_Pos               5U                                         /*!< DWT CTR
+ 923:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_POSTINIT_Msk              (0xFUL << DWT_CTRL_POSTINIT_Pos)            /*!< DWT CTR
+ 924:CMSIS/Include/core_cm3.h **** 
+ 925:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_POSTPRESET_Pos             1U                                         /*!< DWT CTR
+ 926:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_POSTPRESET_Msk            (0xFUL << DWT_CTRL_POSTPRESET_Pos)          /*!< DWT CTR
+ 927:CMSIS/Include/core_cm3.h **** 
+ 928:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_CYCCNTENA_Pos              0U                                         /*!< DWT CTR
+ 929:CMSIS/Include/core_cm3.h **** #define DWT_CTRL_CYCCNTENA_Msk             (0x1UL /*<< DWT_CTRL_CYCCNTENA_Pos*/)       /*!< DWT CTR
+ 930:CMSIS/Include/core_cm3.h **** 
+ 931:CMSIS/Include/core_cm3.h **** /* DWT CPI Count Register Definitions */
+ 932:CMSIS/Include/core_cm3.h **** #define DWT_CPICNT_CPICNT_Pos               0U                                         /*!< DWT CPI
+ 933:CMSIS/Include/core_cm3.h **** #define DWT_CPICNT_CPICNT_Msk              (0xFFUL /*<< DWT_CPICNT_CPICNT_Pos*/)       /*!< DWT CPI
+ 934:CMSIS/Include/core_cm3.h **** 
+ 935:CMSIS/Include/core_cm3.h **** /* DWT Exception Overhead Count Register Definitions */
+ 936:CMSIS/Include/core_cm3.h **** #define DWT_EXCCNT_EXCCNT_Pos               0U                                         /*!< DWT EXC
+ 937:CMSIS/Include/core_cm3.h **** #define DWT_EXCCNT_EXCCNT_Msk              (0xFFUL /*<< DWT_EXCCNT_EXCCNT_Pos*/)       /*!< DWT EXC
+ 938:CMSIS/Include/core_cm3.h **** 
+ 939:CMSIS/Include/core_cm3.h **** /* DWT Sleep Count Register Definitions */
+ 940:CMSIS/Include/core_cm3.h **** #define DWT_SLEEPCNT_SLEEPCNT_Pos           0U                                         /*!< DWT SLE
+ 941:CMSIS/Include/core_cm3.h **** #define DWT_SLEEPCNT_SLEEPCNT_Msk          (0xFFUL /*<< DWT_SLEEPCNT_SLEEPCNT_Pos*/)   /*!< DWT SLE
+ 942:CMSIS/Include/core_cm3.h **** 
+ 943:CMSIS/Include/core_cm3.h **** /* DWT LSU Count Register Definitions */
+ 944:CMSIS/Include/core_cm3.h **** #define DWT_LSUCNT_LSUCNT_Pos               0U                                         /*!< DWT LSU
+ 945:CMSIS/Include/core_cm3.h **** #define DWT_LSUCNT_LSUCNT_Msk              (0xFFUL /*<< DWT_LSUCNT_LSUCNT_Pos*/)       /*!< DWT LSU
+ 946:CMSIS/Include/core_cm3.h **** 
+ 947:CMSIS/Include/core_cm3.h **** /* DWT Folded-instruction Count Register Definitions */
+ 948:CMSIS/Include/core_cm3.h **** #define DWT_FOLDCNT_FOLDCNT_Pos             0U                                         /*!< DWT FOL
+ 949:CMSIS/Include/core_cm3.h **** #define DWT_FOLDCNT_FOLDCNT_Msk            (0xFFUL /*<< DWT_FOLDCNT_FOLDCNT_Pos*/)     /*!< DWT FOL
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 27
+
+
+ 950:CMSIS/Include/core_cm3.h **** 
+ 951:CMSIS/Include/core_cm3.h **** /* DWT Comparator Mask Register Definitions */
+ 952:CMSIS/Include/core_cm3.h **** #define DWT_MASK_MASK_Pos                   0U                                         /*!< DWT MAS
+ 953:CMSIS/Include/core_cm3.h **** #define DWT_MASK_MASK_Msk                  (0x1FUL /*<< DWT_MASK_MASK_Pos*/)           /*!< DWT MAS
+ 954:CMSIS/Include/core_cm3.h **** 
+ 955:CMSIS/Include/core_cm3.h **** /* DWT Comparator Function Register Definitions */
+ 956:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_MATCHED_Pos           24U                                         /*!< DWT FUN
+ 957:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_MATCHED_Msk           (0x1UL << DWT_FUNCTION_MATCHED_Pos)         /*!< DWT FUN
+ 958:CMSIS/Include/core_cm3.h **** 
+ 959:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_DATAVADDR1_Pos        16U                                         /*!< DWT FUN
+ 960:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_DATAVADDR1_Msk        (0xFUL << DWT_FUNCTION_DATAVADDR1_Pos)      /*!< DWT FUN
+ 961:CMSIS/Include/core_cm3.h **** 
+ 962:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_DATAVADDR0_Pos        12U                                         /*!< DWT FUN
+ 963:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_DATAVADDR0_Msk        (0xFUL << DWT_FUNCTION_DATAVADDR0_Pos)      /*!< DWT FUN
+ 964:CMSIS/Include/core_cm3.h **** 
+ 965:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_DATAVSIZE_Pos         10U                                         /*!< DWT FUN
+ 966:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_DATAVSIZE_Msk         (0x3UL << DWT_FUNCTION_DATAVSIZE_Pos)       /*!< DWT FUN
+ 967:CMSIS/Include/core_cm3.h **** 
+ 968:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_LNK1ENA_Pos            9U                                         /*!< DWT FUN
+ 969:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_LNK1ENA_Msk           (0x1UL << DWT_FUNCTION_LNK1ENA_Pos)         /*!< DWT FUN
+ 970:CMSIS/Include/core_cm3.h **** 
+ 971:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_DATAVMATCH_Pos         8U                                         /*!< DWT FUN
+ 972:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_DATAVMATCH_Msk        (0x1UL << DWT_FUNCTION_DATAVMATCH_Pos)      /*!< DWT FUN
+ 973:CMSIS/Include/core_cm3.h **** 
+ 974:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_CYCMATCH_Pos           7U                                         /*!< DWT FUN
+ 975:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_CYCMATCH_Msk          (0x1UL << DWT_FUNCTION_CYCMATCH_Pos)        /*!< DWT FUN
+ 976:CMSIS/Include/core_cm3.h **** 
+ 977:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_EMITRANGE_Pos          5U                                         /*!< DWT FUN
+ 978:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_EMITRANGE_Msk         (0x1UL << DWT_FUNCTION_EMITRANGE_Pos)       /*!< DWT FUN
+ 979:CMSIS/Include/core_cm3.h **** 
+ 980:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_FUNCTION_Pos           0U                                         /*!< DWT FUN
+ 981:CMSIS/Include/core_cm3.h **** #define DWT_FUNCTION_FUNCTION_Msk          (0xFUL /*<< DWT_FUNCTION_FUNCTION_Pos*/)    /*!< DWT FUN
+ 982:CMSIS/Include/core_cm3.h **** 
+ 983:CMSIS/Include/core_cm3.h **** /*@}*/ /* end of group CMSIS_DWT */
+ 984:CMSIS/Include/core_cm3.h **** 
+ 985:CMSIS/Include/core_cm3.h **** 
+ 986:CMSIS/Include/core_cm3.h **** /**
+ 987:CMSIS/Include/core_cm3.h ****   \ingroup  CMSIS_core_register
+ 988:CMSIS/Include/core_cm3.h ****   \defgroup CMSIS_TPI     Trace Port Interface (TPI)
+ 989:CMSIS/Include/core_cm3.h ****   \brief    Type definitions for the Trace Port Interface (TPI)
+ 990:CMSIS/Include/core_cm3.h ****   @{
+ 991:CMSIS/Include/core_cm3.h ****  */
+ 992:CMSIS/Include/core_cm3.h **** 
+ 993:CMSIS/Include/core_cm3.h **** /**
+ 994:CMSIS/Include/core_cm3.h ****   \brief  Structure type to access the Trace Port Interface Register (TPI).
+ 995:CMSIS/Include/core_cm3.h ****  */
+ 996:CMSIS/Include/core_cm3.h **** typedef struct
+ 997:CMSIS/Include/core_cm3.h **** {
+ 998:CMSIS/Include/core_cm3.h ****   __IM  uint32_t SSPSR;                  /*!< Offset: 0x000 (R/ )  Supported Parallel Port Size Reg
+ 999:CMSIS/Include/core_cm3.h ****   __IOM uint32_t CSPSR;                  /*!< Offset: 0x004 (R/W)  Current Parallel Port Size Regis
+1000:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED0[2U];
+1001:CMSIS/Include/core_cm3.h ****   __IOM uint32_t ACPR;                   /*!< Offset: 0x010 (R/W)  Asynchronous Clock Prescaler Reg
+1002:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED1[55U];
+1003:CMSIS/Include/core_cm3.h ****   __IOM uint32_t SPPR;                   /*!< Offset: 0x0F0 (R/W)  Selected Pin Protocol Register *
+1004:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED2[131U];
+1005:CMSIS/Include/core_cm3.h ****   __IM  uint32_t FFSR;                   /*!< Offset: 0x300 (R/ )  Formatter and Flush Status Regis
+1006:CMSIS/Include/core_cm3.h ****   __IOM uint32_t FFCR;                   /*!< Offset: 0x304 (R/W)  Formatter and Flush Control Regi
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 28
+
+
+1007:CMSIS/Include/core_cm3.h ****   __IM  uint32_t FSCR;                   /*!< Offset: 0x308 (R/ )  Formatter Synchronization Counte
+1008:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED3[759U];
+1009:CMSIS/Include/core_cm3.h ****   __IM  uint32_t TRIGGER;                /*!< Offset: 0xEE8 (R/ )  TRIGGER Register */
+1010:CMSIS/Include/core_cm3.h ****   __IM  uint32_t FIFO0;                  /*!< Offset: 0xEEC (R/ )  Integration ETM Data */
+1011:CMSIS/Include/core_cm3.h ****   __IM  uint32_t ITATBCTR2;              /*!< Offset: 0xEF0 (R/ )  ITATBCTR2 */
+1012:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED4[1U];
+1013:CMSIS/Include/core_cm3.h ****   __IM  uint32_t ITATBCTR0;              /*!< Offset: 0xEF8 (R/ )  ITATBCTR0 */
+1014:CMSIS/Include/core_cm3.h ****   __IM  uint32_t FIFO1;                  /*!< Offset: 0xEFC (R/ )  Integration ITM Data */
+1015:CMSIS/Include/core_cm3.h ****   __IOM uint32_t ITCTRL;                 /*!< Offset: 0xF00 (R/W)  Integration Mode Control */
+1016:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED5[39U];
+1017:CMSIS/Include/core_cm3.h ****   __IOM uint32_t CLAIMSET;               /*!< Offset: 0xFA0 (R/W)  Claim tag set */
+1018:CMSIS/Include/core_cm3.h ****   __IOM uint32_t CLAIMCLR;               /*!< Offset: 0xFA4 (R/W)  Claim tag clear */
+1019:CMSIS/Include/core_cm3.h ****         uint32_t RESERVED7[8U];
+1020:CMSIS/Include/core_cm3.h ****   __IM  uint32_t DEVID;                  /*!< Offset: 0xFC8 (R/ )  TPIU_DEVID */
+1021:CMSIS/Include/core_cm3.h ****   __IM  uint32_t DEVTYPE;                /*!< Offset: 0xFCC (R/ )  TPIU_DEVTYPE */
+1022:CMSIS/Include/core_cm3.h **** } TPI_Type;
+1023:CMSIS/Include/core_cm3.h **** 
+1024:CMSIS/Include/core_cm3.h **** /* TPI Asynchronous Clock Prescaler Register Definitions */
+1025:CMSIS/Include/core_cm3.h **** #define TPI_ACPR_PRESCALER_Pos              0U                                         /*!< TPI ACP
+1026:CMSIS/Include/core_cm3.h **** #define TPI_ACPR_PRESCALER_Msk             (0x1FFFUL /*<< TPI_ACPR_PRESCALER_Pos*/)    /*!< TPI ACP
+1027:CMSIS/Include/core_cm3.h **** 
+1028:CMSIS/Include/core_cm3.h **** /* TPI Selected Pin Protocol Register Definitions */
+1029:CMSIS/Include/core_cm3.h **** #define TPI_SPPR_TXMODE_Pos                 0U                                         /*!< TPI SPP
+1030:CMSIS/Include/core_cm3.h **** #define TPI_SPPR_TXMODE_Msk                (0x3UL /*<< TPI_SPPR_TXMODE_Pos*/)          /*!< TPI SPP
+1031:CMSIS/Include/core_cm3.h **** 
+1032:CMSIS/Include/core_cm3.h **** /* TPI Formatter and Flush Status Register Definitions */
+1033:CMSIS/Include/core_cm3.h **** #define TPI_FFSR_FtNonStop_Pos              3U                                         /*!< TPI FFS
+1034:CMSIS/Include/core_cm3.h **** #define TPI_FFSR_FtNonStop_Msk             (0x1UL << TPI_FFSR_FtNonStop_Pos)           /*!< TPI FFS
+1035:CMSIS/Include/core_cm3.h **** 
+1036:CMSIS/Include/core_cm3.h **** #define TPI_FFSR_TCPresent_Pos              2U                                         /*!< TPI FFS
+1037:CMSIS/Include/core_cm3.h **** #define TPI_FFSR_TCPresent_Msk             (0x1UL << TPI_FFSR_TCPresent_Pos)           /*!< TPI FFS
+1038:CMSIS/Include/core_cm3.h **** 
+1039:CMSIS/Include/core_cm3.h **** #define TPI_FFSR_FtStopped_Pos              1U                                         /*!< TPI FFS
+1040:CMSIS/Include/core_cm3.h **** #define TPI_FFSR_FtStopped_Msk             (0x1UL << TPI_FFSR_FtStopped_Pos)           /*!< TPI FFS
+1041:CMSIS/Include/core_cm3.h **** 
+1042:CMSIS/Include/core_cm3.h **** #define TPI_FFSR_FlInProg_Pos               0U                                         /*!< TPI FFS
+1043:CMSIS/Include/core_cm3.h **** #define TPI_FFSR_FlInProg_Msk              (0x1UL /*<< TPI_FFSR_FlInProg_Pos*/)        /*!< TPI FFS
+1044:CMSIS/Include/core_cm3.h **** 
+1045:CMSIS/Include/core_cm3.h **** /* TPI Formatter and Flush Control Register Definitions */
+1046:CMSIS/Include/core_cm3.h **** #define TPI_FFCR_TrigIn_Pos                 8U                                         /*!< TPI FFC
+1047:CMSIS/Include/core_cm3.h **** #define TPI_FFCR_TrigIn_Msk                (0x1UL << TPI_FFCR_TrigIn_Pos)              /*!< TPI FFC
+1048:CMSIS/Include/core_cm3.h **** 
+1049:CMSIS/Include/core_cm3.h **** #define TPI_FFCR_EnFCont_Pos                1U                                         /*!< TPI FFC
+1050:CMSIS/Include/core_cm3.h **** #define TPI_FFCR_EnFCont_Msk               (0x1UL << TPI_FFCR_EnFCont_Pos)             /*!< TPI FFC
+1051:CMSIS/Include/core_cm3.h **** 
+1052:CMSIS/Include/core_cm3.h **** /* TPI TRIGGER Register Definitions */
+1053:CMSIS/Include/core_cm3.h **** #define TPI_TRIGGER_TRIGGER_Pos             0U                                         /*!< TPI TRI
+1054:CMSIS/Include/core_cm3.h **** #define TPI_TRIGGER_TRIGGER_Msk            (0x1UL /*<< TPI_TRIGGER_TRIGGER_Pos*/)      /*!< TPI TRI
+1055:CMSIS/Include/core_cm3.h **** 
+1056:CMSIS/Include/core_cm3.h **** /* TPI Integration ETM Data Register Definitions (FIFO0) */
+1057:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ITM_ATVALID_Pos          29U                                         /*!< TPI FIF
+1058:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ITM_ATVALID_Msk          (0x3UL << TPI_FIFO0_ITM_ATVALID_Pos)        /*!< TPI FIF
+1059:CMSIS/Include/core_cm3.h **** 
+1060:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ITM_bytecount_Pos        27U                                         /*!< TPI FIF
+1061:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ITM_bytecount_Msk        (0x3UL << TPI_FIFO0_ITM_bytecount_Pos)      /*!< TPI FIF
+1062:CMSIS/Include/core_cm3.h **** 
+1063:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ETM_ATVALID_Pos          26U                                         /*!< TPI FIF
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 29
+
+
+1064:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ETM_ATVALID_Msk          (0x3UL << TPI_FIFO0_ETM_ATVALID_Pos)        /*!< TPI FIF
+1065:CMSIS/Include/core_cm3.h **** 
+1066:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ETM_bytecount_Pos        24U                                         /*!< TPI FIF
+1067:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ETM_bytecount_Msk        (0x3UL << TPI_FIFO0_ETM_bytecount_Pos)      /*!< TPI FIF
+1068:CMSIS/Include/core_cm3.h **** 
+1069:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ETM2_Pos                 16U                                         /*!< TPI FIF
+1070:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ETM2_Msk                 (0xFFUL << TPI_FIFO0_ETM2_Pos)              /*!< TPI FIF
+1071:CMSIS/Include/core_cm3.h **** 
+1072:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ETM1_Pos                  8U                                         /*!< TPI FIF
+1073:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ETM1_Msk                 (0xFFUL << TPI_FIFO0_ETM1_Pos)              /*!< TPI FIF
+1074:CMSIS/Include/core_cm3.h **** 
+1075:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ETM0_Pos                  0U                                         /*!< TPI FIF
+1076:CMSIS/Include/core_cm3.h **** #define TPI_FIFO0_ETM0_Msk                 (0xFFUL /*<< TPI_FIFO0_ETM0_Pos*/)          /*!< TPI FIF
+1077:CMSIS/Include/core_cm3.h **** 
+1078:CMSIS/Include/core_cm3.h **** /* TPI ITATBCTR2 Register Definitions */
+1079:CMSIS/Include/core_cm3.h **** #define TPI_ITATBCTR2_ATREADY2_Pos          0U                                         /*!< TPI ITA
+1080:CMSIS/Include/core_cm3.h **** #define TPI_ITATBCTR2_ATREADY2_Msk         (0x1UL /*<< TPI_ITATBCTR2_ATREADY2_Pos*/)   /*!< TPI ITA
+1081:CMSIS/Include/core_cm3.h **** 
+1082:CMSIS/Include/core_cm3.h **** #define TPI_ITATBCTR2_ATREADY1_Pos          0U                                         /*!< TPI ITA
+1083:CMSIS/Include/core_cm3.h **** #define TPI_ITATBCTR2_ATREADY1_Msk         (0x1UL /*<< TPI_ITATBCTR2_ATREADY1_Pos*/)   /*!< TPI ITA
+1084:CMSIS/Include/core_cm3.h **** 
+1085:CMSIS/Include/core_cm3.h **** /* TPI Integration ITM Data Register Definitions (FIFO1) */
+1086:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ITM_ATVALID_Pos          29U                                         /*!< TPI FIF
+1087:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ITM_ATVALID_Msk          (0x3UL << TPI_FIFO1_ITM_ATVALID_Pos)        /*!< TPI FIF
+1088:CMSIS/Include/core_cm3.h **** 
+1089:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ITM_bytecount_Pos        27U                                         /*!< TPI FIF
+1090:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ITM_bytecount_Msk        (0x3UL << TPI_FIFO1_ITM_bytecount_Pos)      /*!< TPI FIF
+1091:CMSIS/Include/core_cm3.h **** 
+1092:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ETM_ATVALID_Pos          26U                                         /*!< TPI FIF
+1093:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ETM_ATVALID_Msk          (0x3UL << TPI_FIFO1_ETM_ATVALID_Pos)        /*!< TPI FIF
+1094:CMSIS/Include/core_cm3.h **** 
+1095:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ETM_bytecount_Pos        24U                                         /*!< TPI FIF
+1096:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ETM_bytecount_Msk        (0x3UL << TPI_FIFO1_ETM_bytecount_Pos)      /*!< TPI FIF
+1097:CMSIS/Include/core_cm3.h **** 
+1098:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ITM2_Pos                 16U                                         /*!< TPI FIF
+1099:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ITM2_Msk                 (0xFFUL << TPI_FIFO1_ITM2_Pos)              /*!< TPI FIF
+1100:CMSIS/Include/core_cm3.h **** 
+1101:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ITM1_Pos                  8U                                         /*!< TPI FIF
+1102:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ITM1_Msk                 (0xFFUL << TPI_FIFO1_ITM1_Pos)              /*!< TPI FIF
+1103:CMSIS/Include/core_cm3.h **** 
+1104:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ITM0_Pos                  0U                                         /*!< TPI FIF
+1105:CMSIS/Include/core_cm3.h **** #define TPI_FIFO1_ITM0_Msk                 (0xFFUL /*<< TPI_FIFO1_ITM0_Pos*/)          /*!< TPI FIF
+1106:CMSIS/Include/core_cm3.h **** 
+1107:CMSIS/Include/core_cm3.h **** /* TPI ITATBCTR0 Register Definitions */
+1108:CMSIS/Include/core_cm3.h **** #define TPI_ITATBCTR0_ATREADY2_Pos          0U                                         /*!< TPI ITA
+1109:CMSIS/Include/core_cm3.h **** #define TPI_ITATBCTR0_ATREADY2_Msk         (0x1UL /*<< TPI_ITATBCTR0_ATREADY2_Pos*/)   /*!< TPI ITA
+1110:CMSIS/Include/core_cm3.h **** 
+1111:CMSIS/Include/core_cm3.h **** #define TPI_ITATBCTR0_ATREADY1_Pos          0U                                         /*!< TPI ITA
+1112:CMSIS/Include/core_cm3.h **** #define TPI_ITATBCTR0_ATREADY1_Msk         (0x1UL /*<< TPI_ITATBCTR0_ATREADY1_Pos*/)   /*!< TPI ITA
+1113:CMSIS/Include/core_cm3.h **** 
+1114:CMSIS/Include/core_cm3.h **** /* TPI Integration Mode Control Register Definitions */
+1115:CMSIS/Include/core_cm3.h **** #define TPI_ITCTRL_Mode_Pos                 0U                                         /*!< TPI ITC
+1116:CMSIS/Include/core_cm3.h **** #define TPI_ITCTRL_Mode_Msk                (0x3UL /*<< TPI_ITCTRL_Mode_Pos*/)          /*!< TPI ITC
+1117:CMSIS/Include/core_cm3.h **** 
+1118:CMSIS/Include/core_cm3.h **** /* TPI DEVID Register Definitions */
+1119:CMSIS/Include/core_cm3.h **** #define TPI_DEVID_NRZVALID_Pos             11U                                         /*!< TPI DEV
+1120:CMSIS/Include/core_cm3.h **** #define TPI_DEVID_NRZVALID_Msk             (0x1UL << TPI_DEVID_NRZVALID_Pos)           /*!< TPI DEV
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 30
+
+
+1121:CMSIS/Include/core_cm3.h **** 
+1122:CMSIS/Include/core_cm3.h **** #define TPI_DEVID_MANCVALID_Pos            10U                                         /*!< TPI DEV
+1123:CMSIS/Include/core_cm3.h **** #define TPI_DEVID_MANCVALID_Msk            (0x1UL << TPI_DEVID_MANCVALID_Pos)          /*!< TPI DEV
+1124:CMSIS/Include/core_cm3.h **** 
+1125:CMSIS/Include/core_cm3.h **** #define TPI_DEVID_PTINVALID_Pos             9U                                         /*!< TPI DEV
+1126:CMSIS/Include/core_cm3.h **** #define TPI_DEVID_PTINVALID_Msk            (0x1UL << TPI_DEVID_PTINVALID_Pos)          /*!< TPI DEV
+1127:CMSIS/Include/core_cm3.h **** 
+1128:CMSIS/Include/core_cm3.h **** #define TPI_DEVID_MinBufSz_Pos              6U                                         /*!< TPI DEV
+1129:CMSIS/Include/core_cm3.h **** #define TPI_DEVID_MinBufSz_Msk             (0x7UL << TPI_DEVID_MinBufSz_Pos)           /*!< TPI DEV
+1130:CMSIS/Include/core_cm3.h **** 
+1131:CMSIS/Include/core_cm3.h **** #define TPI_DEVID_AsynClkIn_Pos             5U                                         /*!< TPI DEV
+1132:CMSIS/Include/core_cm3.h **** #define TPI_DEVID_AsynClkIn_Msk            (0x1UL << TPI_DEVID_AsynClkIn_Pos)          /*!< TPI DEV
+1133:CMSIS/Include/core_cm3.h **** 
+1134:CMSIS/Include/core_cm3.h **** #define TPI_DEVID_NrTraceInput_Pos          0U                                         /*!< TPI DEV
+1135:CMSIS/Include/core_cm3.h **** #define TPI_DEVID_NrTraceInput_Msk         (0x1FUL /*<< TPI_DEVID_NrTraceInput_Pos*/)  /*!< TPI DEV
+1136:CMSIS/Include/core_cm3.h **** 
+1137:CMSIS/Include/core_cm3.h **** /* TPI DEVTYPE Register Definitions */
+1138:CMSIS/Include/core_cm3.h **** #define TPI_DEVTYPE_SubType_Pos             4U                                         /*!< TPI DEV
+1139:CMSIS/Include/core_cm3.h **** #define TPI_DEVTYPE_SubType_Msk            (0xFUL /*<< TPI_DEVTYPE_SubType_Pos*/)      /*!< TPI DEV
+1140:CMSIS/Include/core_cm3.h **** 
+1141:CMSIS/Include/core_cm3.h **** #define TPI_DEVTYPE_MajorType_Pos           0U                                         /*!< TPI DEV
+1142:CMSIS/Include/core_cm3.h **** #define TPI_DEVTYPE_MajorType_Msk          (0xFUL << TPI_DEVTYPE_MajorType_Pos)        /*!< TPI DEV
+1143:CMSIS/Include/core_cm3.h **** 
+1144:CMSIS/Include/core_cm3.h **** /*@}*/ /* end of group CMSIS_TPI */
+1145:CMSIS/Include/core_cm3.h **** 
+1146:CMSIS/Include/core_cm3.h **** 
+1147:CMSIS/Include/core_cm3.h **** #if defined (__MPU_PRESENT) && (__MPU_PRESENT == 1U)
+1148:CMSIS/Include/core_cm3.h **** /**
+1149:CMSIS/Include/core_cm3.h ****   \ingroup  CMSIS_core_register
+1150:CMSIS/Include/core_cm3.h ****   \defgroup CMSIS_MPU     Memory Protection Unit (MPU)
+1151:CMSIS/Include/core_cm3.h ****   \brief    Type definitions for the Memory Protection Unit (MPU)
+1152:CMSIS/Include/core_cm3.h ****   @{
+1153:CMSIS/Include/core_cm3.h ****  */
+1154:CMSIS/Include/core_cm3.h **** 
+1155:CMSIS/Include/core_cm3.h **** /**
+1156:CMSIS/Include/core_cm3.h ****   \brief  Structure type to access the Memory Protection Unit (MPU).
+1157:CMSIS/Include/core_cm3.h ****  */
+1158:CMSIS/Include/core_cm3.h **** typedef struct
+1159:CMSIS/Include/core_cm3.h **** {
+1160:CMSIS/Include/core_cm3.h ****   __IM  uint32_t TYPE;                   /*!< Offset: 0x000 (R/ )  MPU Type Register */
+1161:CMSIS/Include/core_cm3.h ****   __IOM uint32_t CTRL;                   /*!< Offset: 0x004 (R/W)  MPU Control Register */
+1162:CMSIS/Include/core_cm3.h ****   __IOM uint32_t RNR;                    /*!< Offset: 0x008 (R/W)  MPU Region RNRber Register */
+1163:CMSIS/Include/core_cm3.h ****   __IOM uint32_t RBAR;                   /*!< Offset: 0x00C (R/W)  MPU Region Base Address Register
+1164:CMSIS/Include/core_cm3.h ****   __IOM uint32_t RASR;                   /*!< Offset: 0x010 (R/W)  MPU Region Attribute and Size Re
+1165:CMSIS/Include/core_cm3.h ****   __IOM uint32_t RBAR_A1;                /*!< Offset: 0x014 (R/W)  MPU Alias 1 Region Base Address 
+1166:CMSIS/Include/core_cm3.h ****   __IOM uint32_t RASR_A1;                /*!< Offset: 0x018 (R/W)  MPU Alias 1 Region Attribute and
+1167:CMSIS/Include/core_cm3.h ****   __IOM uint32_t RBAR_A2;                /*!< Offset: 0x01C (R/W)  MPU Alias 2 Region Base Address 
+1168:CMSIS/Include/core_cm3.h ****   __IOM uint32_t RASR_A2;                /*!< Offset: 0x020 (R/W)  MPU Alias 2 Region Attribute and
+1169:CMSIS/Include/core_cm3.h ****   __IOM uint32_t RBAR_A3;                /*!< Offset: 0x024 (R/W)  MPU Alias 3 Region Base Address 
+1170:CMSIS/Include/core_cm3.h ****   __IOM uint32_t RASR_A3;                /*!< Offset: 0x028 (R/W)  MPU Alias 3 Region Attribute and
+1171:CMSIS/Include/core_cm3.h **** } MPU_Type;
+1172:CMSIS/Include/core_cm3.h **** 
+1173:CMSIS/Include/core_cm3.h **** #define MPU_TYPE_RALIASES                  4U
+1174:CMSIS/Include/core_cm3.h **** 
+1175:CMSIS/Include/core_cm3.h **** /* MPU Type Register Definitions */
+1176:CMSIS/Include/core_cm3.h **** #define MPU_TYPE_IREGION_Pos               16U                                            /*!< MPU 
+1177:CMSIS/Include/core_cm3.h **** #define MPU_TYPE_IREGION_Msk               (0xFFUL << MPU_TYPE_IREGION_Pos)               /*!< MPU 
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 31
+
+
+1178:CMSIS/Include/core_cm3.h **** 
+1179:CMSIS/Include/core_cm3.h **** #define MPU_TYPE_DREGION_Pos                8U                                            /*!< MPU 
+1180:CMSIS/Include/core_cm3.h **** #define MPU_TYPE_DREGION_Msk               (0xFFUL << MPU_TYPE_DREGION_Pos)               /*!< MPU 
+1181:CMSIS/Include/core_cm3.h **** 
+1182:CMSIS/Include/core_cm3.h **** #define MPU_TYPE_SEPARATE_Pos               0U                                            /*!< MPU 
+1183:CMSIS/Include/core_cm3.h **** #define MPU_TYPE_SEPARATE_Msk              (1UL /*<< MPU_TYPE_SEPARATE_Pos*/)             /*!< MPU 
+1184:CMSIS/Include/core_cm3.h **** 
+1185:CMSIS/Include/core_cm3.h **** /* MPU Control Register Definitions */
+1186:CMSIS/Include/core_cm3.h **** #define MPU_CTRL_PRIVDEFENA_Pos             2U                                            /*!< MPU 
+1187:CMSIS/Include/core_cm3.h **** #define MPU_CTRL_PRIVDEFENA_Msk            (1UL << MPU_CTRL_PRIVDEFENA_Pos)               /*!< MPU 
+1188:CMSIS/Include/core_cm3.h **** 
+1189:CMSIS/Include/core_cm3.h **** #define MPU_CTRL_HFNMIENA_Pos               1U                                            /*!< MPU 
+1190:CMSIS/Include/core_cm3.h **** #define MPU_CTRL_HFNMIENA_Msk              (1UL << MPU_CTRL_HFNMIENA_Pos)                 /*!< MPU 
+1191:CMSIS/Include/core_cm3.h **** 
+1192:CMSIS/Include/core_cm3.h **** #define MPU_CTRL_ENABLE_Pos                 0U                                            /*!< MPU 
+1193:CMSIS/Include/core_cm3.h **** #define MPU_CTRL_ENABLE_Msk                (1UL /*<< MPU_CTRL_ENABLE_Pos*/)               /*!< MPU 
+1194:CMSIS/Include/core_cm3.h **** 
+1195:CMSIS/Include/core_cm3.h **** /* MPU Region Number Register Definitions */
+1196:CMSIS/Include/core_cm3.h **** #define MPU_RNR_REGION_Pos                  0U                                            /*!< MPU 
+1197:CMSIS/Include/core_cm3.h **** #define MPU_RNR_REGION_Msk                 (0xFFUL /*<< MPU_RNR_REGION_Pos*/)             /*!< MPU 
+1198:CMSIS/Include/core_cm3.h **** 
+1199:CMSIS/Include/core_cm3.h **** /* MPU Region Base Address Register Definitions */
+1200:CMSIS/Include/core_cm3.h **** #define MPU_RBAR_ADDR_Pos                   5U                                            /*!< MPU 
+1201:CMSIS/Include/core_cm3.h **** #define MPU_RBAR_ADDR_Msk                  (0x7FFFFFFUL << MPU_RBAR_ADDR_Pos)             /*!< MPU 
+1202:CMSIS/Include/core_cm3.h **** 
+1203:CMSIS/Include/core_cm3.h **** #define MPU_RBAR_VALID_Pos                  4U                                            /*!< MPU 
+1204:CMSIS/Include/core_cm3.h **** #define MPU_RBAR_VALID_Msk                 (1UL << MPU_RBAR_VALID_Pos)                    /*!< MPU 
+1205:CMSIS/Include/core_cm3.h **** 
+1206:CMSIS/Include/core_cm3.h **** #define MPU_RBAR_REGION_Pos                 0U                                            /*!< MPU 
+1207:CMSIS/Include/core_cm3.h **** #define MPU_RBAR_REGION_Msk                (0xFUL /*<< MPU_RBAR_REGION_Pos*/)             /*!< MPU 
+1208:CMSIS/Include/core_cm3.h **** 
+1209:CMSIS/Include/core_cm3.h **** /* MPU Region Attribute and Size Register Definitions */
+1210:CMSIS/Include/core_cm3.h **** #define MPU_RASR_ATTRS_Pos                 16U                                            /*!< MPU 
+1211:CMSIS/Include/core_cm3.h **** #define MPU_RASR_ATTRS_Msk                 (0xFFFFUL << MPU_RASR_ATTRS_Pos)               /*!< MPU 
+1212:CMSIS/Include/core_cm3.h **** 
+1213:CMSIS/Include/core_cm3.h **** #define MPU_RASR_XN_Pos                    28U                                            /*!< MPU 
+1214:CMSIS/Include/core_cm3.h **** #define MPU_RASR_XN_Msk                    (1UL << MPU_RASR_XN_Pos)                       /*!< MPU 
+1215:CMSIS/Include/core_cm3.h **** 
+1216:CMSIS/Include/core_cm3.h **** #define MPU_RASR_AP_Pos                    24U                                            /*!< MPU 
+1217:CMSIS/Include/core_cm3.h **** #define MPU_RASR_AP_Msk                    (0x7UL << MPU_RASR_AP_Pos)                     /*!< MPU 
+1218:CMSIS/Include/core_cm3.h **** 
+1219:CMSIS/Include/core_cm3.h **** #define MPU_RASR_TEX_Pos                   19U                                            /*!< MPU 
+1220:CMSIS/Include/core_cm3.h **** #define MPU_RASR_TEX_Msk                   (0x7UL << MPU_RASR_TEX_Pos)                    /*!< MPU 
+1221:CMSIS/Include/core_cm3.h **** 
+1222:CMSIS/Include/core_cm3.h **** #define MPU_RASR_S_Pos                     18U                                            /*!< MPU 
+1223:CMSIS/Include/core_cm3.h **** #define MPU_RASR_S_Msk                     (1UL << MPU_RASR_S_Pos)                        /*!< MPU 
+1224:CMSIS/Include/core_cm3.h **** 
+1225:CMSIS/Include/core_cm3.h **** #define MPU_RASR_C_Pos                     17U                                            /*!< MPU 
+1226:CMSIS/Include/core_cm3.h **** #define MPU_RASR_C_Msk                     (1UL << MPU_RASR_C_Pos)                        /*!< MPU 
+1227:CMSIS/Include/core_cm3.h **** 
+1228:CMSIS/Include/core_cm3.h **** #define MPU_RASR_B_Pos                     16U                                            /*!< MPU 
+1229:CMSIS/Include/core_cm3.h **** #define MPU_RASR_B_Msk                     (1UL << MPU_RASR_B_Pos)                        /*!< MPU 
+1230:CMSIS/Include/core_cm3.h **** 
+1231:CMSIS/Include/core_cm3.h **** #define MPU_RASR_SRD_Pos                    8U                                            /*!< MPU 
+1232:CMSIS/Include/core_cm3.h **** #define MPU_RASR_SRD_Msk                   (0xFFUL << MPU_RASR_SRD_Pos)                   /*!< MPU 
+1233:CMSIS/Include/core_cm3.h **** 
+1234:CMSIS/Include/core_cm3.h **** #define MPU_RASR_SIZE_Pos                   1U                                            /*!< MPU 
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 32
+
+
+1235:CMSIS/Include/core_cm3.h **** #define MPU_RASR_SIZE_Msk                  (0x1FUL << MPU_RASR_SIZE_Pos)                  /*!< MPU 
+1236:CMSIS/Include/core_cm3.h **** 
+1237:CMSIS/Include/core_cm3.h **** #define MPU_RASR_ENABLE_Pos                 0U                                            /*!< MPU 
+1238:CMSIS/Include/core_cm3.h **** #define MPU_RASR_ENABLE_Msk                (1UL /*<< MPU_RASR_ENABLE_Pos*/)               /*!< MPU 
+1239:CMSIS/Include/core_cm3.h **** 
+1240:CMSIS/Include/core_cm3.h **** /*@} end of group CMSIS_MPU */
+1241:CMSIS/Include/core_cm3.h **** #endif
+1242:CMSIS/Include/core_cm3.h **** 
+1243:CMSIS/Include/core_cm3.h **** 
+1244:CMSIS/Include/core_cm3.h **** /**
+1245:CMSIS/Include/core_cm3.h ****   \ingroup  CMSIS_core_register
+1246:CMSIS/Include/core_cm3.h ****   \defgroup CMSIS_CoreDebug       Core Debug Registers (CoreDebug)
+1247:CMSIS/Include/core_cm3.h ****   \brief    Type definitions for the Core Debug Registers
+1248:CMSIS/Include/core_cm3.h ****   @{
+1249:CMSIS/Include/core_cm3.h ****  */
+1250:CMSIS/Include/core_cm3.h **** 
+1251:CMSIS/Include/core_cm3.h **** /**
+1252:CMSIS/Include/core_cm3.h ****   \brief  Structure type to access the Core Debug Register (CoreDebug).
+1253:CMSIS/Include/core_cm3.h ****  */
+1254:CMSIS/Include/core_cm3.h **** typedef struct
+1255:CMSIS/Include/core_cm3.h **** {
+1256:CMSIS/Include/core_cm3.h ****   __IOM uint32_t DHCSR;                  /*!< Offset: 0x000 (R/W)  Debug Halting Control and Status
+1257:CMSIS/Include/core_cm3.h ****   __OM  uint32_t DCRSR;                  /*!< Offset: 0x004 ( /W)  Debug Core Register Selector Reg
+1258:CMSIS/Include/core_cm3.h ****   __IOM uint32_t DCRDR;                  /*!< Offset: 0x008 (R/W)  Debug Core Register Data Registe
+1259:CMSIS/Include/core_cm3.h ****   __IOM uint32_t DEMCR;                  /*!< Offset: 0x00C (R/W)  Debug Exception and Monitor Cont
+1260:CMSIS/Include/core_cm3.h **** } CoreDebug_Type;
+1261:CMSIS/Include/core_cm3.h **** 
+1262:CMSIS/Include/core_cm3.h **** /* Debug Halting Control and Status Register Definitions */
+1263:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_DBGKEY_Pos         16U                                            /*!< Core
+1264:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_DBGKEY_Msk         (0xFFFFUL << CoreDebug_DHCSR_DBGKEY_Pos)       /*!< Core
+1265:CMSIS/Include/core_cm3.h **** 
+1266:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_S_RESET_ST_Pos     25U                                            /*!< Core
+1267:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_S_RESET_ST_Msk     (1UL << CoreDebug_DHCSR_S_RESET_ST_Pos)        /*!< Core
+1268:CMSIS/Include/core_cm3.h **** 
+1269:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_S_RETIRE_ST_Pos    24U                                            /*!< Core
+1270:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_S_RETIRE_ST_Msk    (1UL << CoreDebug_DHCSR_S_RETIRE_ST_Pos)       /*!< Core
+1271:CMSIS/Include/core_cm3.h **** 
+1272:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_S_LOCKUP_Pos       19U                                            /*!< Core
+1273:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_S_LOCKUP_Msk       (1UL << CoreDebug_DHCSR_S_LOCKUP_Pos)          /*!< Core
+1274:CMSIS/Include/core_cm3.h **** 
+1275:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_S_SLEEP_Pos        18U                                            /*!< Core
+1276:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_S_SLEEP_Msk        (1UL << CoreDebug_DHCSR_S_SLEEP_Pos)           /*!< Core
+1277:CMSIS/Include/core_cm3.h **** 
+1278:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_S_HALT_Pos         17U                                            /*!< Core
+1279:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_S_HALT_Msk         (1UL << CoreDebug_DHCSR_S_HALT_Pos)            /*!< Core
+1280:CMSIS/Include/core_cm3.h **** 
+1281:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_S_REGRDY_Pos       16U                                            /*!< Core
+1282:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_S_REGRDY_Msk       (1UL << CoreDebug_DHCSR_S_REGRDY_Pos)          /*!< Core
+1283:CMSIS/Include/core_cm3.h **** 
+1284:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_C_SNAPSTALL_Pos     5U                                            /*!< Core
+1285:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_C_SNAPSTALL_Msk    (1UL << CoreDebug_DHCSR_C_SNAPSTALL_Pos)       /*!< Core
+1286:CMSIS/Include/core_cm3.h **** 
+1287:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_C_MASKINTS_Pos      3U                                            /*!< Core
+1288:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_C_MASKINTS_Msk     (1UL << CoreDebug_DHCSR_C_MASKINTS_Pos)        /*!< Core
+1289:CMSIS/Include/core_cm3.h **** 
+1290:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_C_STEP_Pos          2U                                            /*!< Core
+1291:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_C_STEP_Msk         (1UL << CoreDebug_DHCSR_C_STEP_Pos)            /*!< Core
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 33
+
+
+1292:CMSIS/Include/core_cm3.h **** 
+1293:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_C_HALT_Pos          1U                                            /*!< Core
+1294:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_C_HALT_Msk         (1UL << CoreDebug_DHCSR_C_HALT_Pos)            /*!< Core
+1295:CMSIS/Include/core_cm3.h **** 
+1296:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_C_DEBUGEN_Pos       0U                                            /*!< Core
+1297:CMSIS/Include/core_cm3.h **** #define CoreDebug_DHCSR_C_DEBUGEN_Msk      (1UL /*<< CoreDebug_DHCSR_C_DEBUGEN_Pos*/)     /*!< Core
+1298:CMSIS/Include/core_cm3.h **** 
+1299:CMSIS/Include/core_cm3.h **** /* Debug Core Register Selector Register Definitions */
+1300:CMSIS/Include/core_cm3.h **** #define CoreDebug_DCRSR_REGWnR_Pos         16U                                            /*!< Core
+1301:CMSIS/Include/core_cm3.h **** #define CoreDebug_DCRSR_REGWnR_Msk         (1UL << CoreDebug_DCRSR_REGWnR_Pos)            /*!< Core
+1302:CMSIS/Include/core_cm3.h **** 
+1303:CMSIS/Include/core_cm3.h **** #define CoreDebug_DCRSR_REGSEL_Pos          0U                                            /*!< Core
+1304:CMSIS/Include/core_cm3.h **** #define CoreDebug_DCRSR_REGSEL_Msk         (0x1FUL /*<< CoreDebug_DCRSR_REGSEL_Pos*/)     /*!< Core
+1305:CMSIS/Include/core_cm3.h **** 
+1306:CMSIS/Include/core_cm3.h **** /* Debug Exception and Monitor Control Register Definitions */
+1307:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_TRCENA_Pos         24U                                            /*!< Core
+1308:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_TRCENA_Msk         (1UL << CoreDebug_DEMCR_TRCENA_Pos)            /*!< Core
+1309:CMSIS/Include/core_cm3.h **** 
+1310:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_MON_REQ_Pos        19U                                            /*!< Core
+1311:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_MON_REQ_Msk        (1UL << CoreDebug_DEMCR_MON_REQ_Pos)           /*!< Core
+1312:CMSIS/Include/core_cm3.h **** 
+1313:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_MON_STEP_Pos       18U                                            /*!< Core
+1314:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_MON_STEP_Msk       (1UL << CoreDebug_DEMCR_MON_STEP_Pos)          /*!< Core
+1315:CMSIS/Include/core_cm3.h **** 
+1316:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_MON_PEND_Pos       17U                                            /*!< Core
+1317:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_MON_PEND_Msk       (1UL << CoreDebug_DEMCR_MON_PEND_Pos)          /*!< Core
+1318:CMSIS/Include/core_cm3.h **** 
+1319:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_MON_EN_Pos         16U                                            /*!< Core
+1320:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_MON_EN_Msk         (1UL << CoreDebug_DEMCR_MON_EN_Pos)            /*!< Core
+1321:CMSIS/Include/core_cm3.h **** 
+1322:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_HARDERR_Pos     10U                                            /*!< Core
+1323:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_HARDERR_Msk     (1UL << CoreDebug_DEMCR_VC_HARDERR_Pos)        /*!< Core
+1324:CMSIS/Include/core_cm3.h **** 
+1325:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_INTERR_Pos       9U                                            /*!< Core
+1326:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_INTERR_Msk      (1UL << CoreDebug_DEMCR_VC_INTERR_Pos)         /*!< Core
+1327:CMSIS/Include/core_cm3.h **** 
+1328:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_BUSERR_Pos       8U                                            /*!< Core
+1329:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_BUSERR_Msk      (1UL << CoreDebug_DEMCR_VC_BUSERR_Pos)         /*!< Core
+1330:CMSIS/Include/core_cm3.h **** 
+1331:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_STATERR_Pos      7U                                            /*!< Core
+1332:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_STATERR_Msk     (1UL << CoreDebug_DEMCR_VC_STATERR_Pos)        /*!< Core
+1333:CMSIS/Include/core_cm3.h **** 
+1334:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_CHKERR_Pos       6U                                            /*!< Core
+1335:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_CHKERR_Msk      (1UL << CoreDebug_DEMCR_VC_CHKERR_Pos)         /*!< Core
+1336:CMSIS/Include/core_cm3.h **** 
+1337:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_NOCPERR_Pos      5U                                            /*!< Core
+1338:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_NOCPERR_Msk     (1UL << CoreDebug_DEMCR_VC_NOCPERR_Pos)        /*!< Core
+1339:CMSIS/Include/core_cm3.h **** 
+1340:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_MMERR_Pos        4U                                            /*!< Core
+1341:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_MMERR_Msk       (1UL << CoreDebug_DEMCR_VC_MMERR_Pos)          /*!< Core
+1342:CMSIS/Include/core_cm3.h **** 
+1343:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_CORERESET_Pos    0U                                            /*!< Core
+1344:CMSIS/Include/core_cm3.h **** #define CoreDebug_DEMCR_VC_CORERESET_Msk   (1UL /*<< CoreDebug_DEMCR_VC_CORERESET_Pos*/)  /*!< Core
+1345:CMSIS/Include/core_cm3.h **** 
+1346:CMSIS/Include/core_cm3.h **** /*@} end of group CMSIS_CoreDebug */
+1347:CMSIS/Include/core_cm3.h **** 
+1348:CMSIS/Include/core_cm3.h **** 
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 34
+
+
+1349:CMSIS/Include/core_cm3.h **** /**
+1350:CMSIS/Include/core_cm3.h ****   \ingroup    CMSIS_core_register
+1351:CMSIS/Include/core_cm3.h ****   \defgroup   CMSIS_core_bitfield     Core register bit field macros
+1352:CMSIS/Include/core_cm3.h ****   \brief      Macros for use with bit field definitions (xxx_Pos, xxx_Msk).
+1353:CMSIS/Include/core_cm3.h ****   @{
+1354:CMSIS/Include/core_cm3.h ****  */
+1355:CMSIS/Include/core_cm3.h **** 
+1356:CMSIS/Include/core_cm3.h **** /**
+1357:CMSIS/Include/core_cm3.h ****   \brief   Mask and shift a bit field value for use in a register bit range.
+1358:CMSIS/Include/core_cm3.h ****   \param[in] field  Name of the register bit field.
+1359:CMSIS/Include/core_cm3.h ****   \param[in] value  Value of the bit field. This parameter is interpreted as an uint32_t type.
+1360:CMSIS/Include/core_cm3.h ****   \return           Masked and shifted value.
+1361:CMSIS/Include/core_cm3.h **** */
+1362:CMSIS/Include/core_cm3.h **** #define _VAL2FLD(field, value)    (((uint32_t)(value) << field ## _Pos) & field ## _Msk)
+1363:CMSIS/Include/core_cm3.h **** 
+1364:CMSIS/Include/core_cm3.h **** /**
+1365:CMSIS/Include/core_cm3.h ****   \brief     Mask and shift a register value to extract a bit filed value.
+1366:CMSIS/Include/core_cm3.h ****   \param[in] field  Name of the register bit field.
+1367:CMSIS/Include/core_cm3.h ****   \param[in] value  Value of register. This parameter is interpreted as an uint32_t type.
+1368:CMSIS/Include/core_cm3.h ****   \return           Masked and shifted bit field value.
+1369:CMSIS/Include/core_cm3.h **** */
+1370:CMSIS/Include/core_cm3.h **** #define _FLD2VAL(field, value)    (((uint32_t)(value) & field ## _Msk) >> field ## _Pos)
+1371:CMSIS/Include/core_cm3.h **** 
+1372:CMSIS/Include/core_cm3.h **** /*@} end of group CMSIS_core_bitfield */
+1373:CMSIS/Include/core_cm3.h **** 
+1374:CMSIS/Include/core_cm3.h **** 
+1375:CMSIS/Include/core_cm3.h **** /**
+1376:CMSIS/Include/core_cm3.h ****   \ingroup    CMSIS_core_register
+1377:CMSIS/Include/core_cm3.h ****   \defgroup   CMSIS_core_base     Core Definitions
+1378:CMSIS/Include/core_cm3.h ****   \brief      Definitions for base addresses, unions, and structures.
+1379:CMSIS/Include/core_cm3.h ****   @{
+1380:CMSIS/Include/core_cm3.h ****  */
+1381:CMSIS/Include/core_cm3.h **** 
+1382:CMSIS/Include/core_cm3.h **** /* Memory mapping of Core Hardware */
+1383:CMSIS/Include/core_cm3.h **** #define SCS_BASE            (0xE000E000UL)                            /*!< System Control Space Bas
+1384:CMSIS/Include/core_cm3.h **** #define ITM_BASE            (0xE0000000UL)                            /*!< ITM Base Address */
+1385:CMSIS/Include/core_cm3.h **** #define DWT_BASE            (0xE0001000UL)                            /*!< DWT Base Address */
+1386:CMSIS/Include/core_cm3.h **** #define TPI_BASE            (0xE0040000UL)                            /*!< TPI Base Address */
+1387:CMSIS/Include/core_cm3.h **** #define CoreDebug_BASE      (0xE000EDF0UL)                            /*!< Core Debug Base Address 
+1388:CMSIS/Include/core_cm3.h **** #define SysTick_BASE        (SCS_BASE +  0x0010UL)                    /*!< SysTick Base Address */
+1389:CMSIS/Include/core_cm3.h **** #define NVIC_BASE           (SCS_BASE +  0x0100UL)                    /*!< NVIC Base Address */
+1390:CMSIS/Include/core_cm3.h **** #define SCB_BASE            (SCS_BASE +  0x0D00UL)                    /*!< System Control Block Bas
+1391:CMSIS/Include/core_cm3.h **** 
+1392:CMSIS/Include/core_cm3.h **** #define SCnSCB              ((SCnSCB_Type    *)     SCS_BASE      )   /*!< System control Register 
+1393:CMSIS/Include/core_cm3.h **** #define SCB                 ((SCB_Type       *)     SCB_BASE      )   /*!< SCB configuration struct
+1394:CMSIS/Include/core_cm3.h **** #define SysTick             ((SysTick_Type   *)     SysTick_BASE  )   /*!< SysTick configuration st
+1395:CMSIS/Include/core_cm3.h **** #define NVIC                ((NVIC_Type      *)     NVIC_BASE     )   /*!< NVIC configuration struc
+1396:CMSIS/Include/core_cm3.h **** #define ITM                 ((ITM_Type       *)     ITM_BASE      )   /*!< ITM configuration struct
+1397:CMSIS/Include/core_cm3.h **** #define DWT                 ((DWT_Type       *)     DWT_BASE      )   /*!< DWT configuration struct
+1398:CMSIS/Include/core_cm3.h **** #define TPI                 ((TPI_Type       *)     TPI_BASE      )   /*!< TPI configuration struct
+1399:CMSIS/Include/core_cm3.h **** #define CoreDebug           ((CoreDebug_Type *)     CoreDebug_BASE)   /*!< Core Debug configuration
+1400:CMSIS/Include/core_cm3.h **** 
+1401:CMSIS/Include/core_cm3.h **** #if defined (__MPU_PRESENT) && (__MPU_PRESENT == 1U)
+1402:CMSIS/Include/core_cm3.h ****   #define MPU_BASE          (SCS_BASE +  0x0D90UL)                    /*!< Memory Protection Unit *
+1403:CMSIS/Include/core_cm3.h ****   #define MPU               ((MPU_Type       *)     MPU_BASE      )   /*!< Memory Protection Unit *
+1404:CMSIS/Include/core_cm3.h **** #endif
+1405:CMSIS/Include/core_cm3.h **** 
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 35
+
+
+1406:CMSIS/Include/core_cm3.h **** /*@} */
+1407:CMSIS/Include/core_cm3.h **** 
+1408:CMSIS/Include/core_cm3.h **** 
+1409:CMSIS/Include/core_cm3.h **** 
+1410:CMSIS/Include/core_cm3.h **** /*******************************************************************************
+1411:CMSIS/Include/core_cm3.h ****  *                Hardware Abstraction Layer
+1412:CMSIS/Include/core_cm3.h ****   Core Function Interface contains:
+1413:CMSIS/Include/core_cm3.h ****   - Core NVIC Functions
+1414:CMSIS/Include/core_cm3.h ****   - Core SysTick Functions
+1415:CMSIS/Include/core_cm3.h ****   - Core Debug Functions
+1416:CMSIS/Include/core_cm3.h ****   - Core Register Access Functions
+1417:CMSIS/Include/core_cm3.h ****  ******************************************************************************/
+1418:CMSIS/Include/core_cm3.h **** /**
+1419:CMSIS/Include/core_cm3.h ****   \defgroup CMSIS_Core_FunctionInterface Functions and Instructions Reference
+1420:CMSIS/Include/core_cm3.h **** */
+1421:CMSIS/Include/core_cm3.h **** 
+1422:CMSIS/Include/core_cm3.h **** 
+1423:CMSIS/Include/core_cm3.h **** 
+1424:CMSIS/Include/core_cm3.h **** /* ##########################   NVIC functions  #################################### */
+1425:CMSIS/Include/core_cm3.h **** /**
+1426:CMSIS/Include/core_cm3.h ****   \ingroup  CMSIS_Core_FunctionInterface
+1427:CMSIS/Include/core_cm3.h ****   \defgroup CMSIS_Core_NVICFunctions NVIC Functions
+1428:CMSIS/Include/core_cm3.h ****   \brief    Functions that manage interrupts and exceptions via the NVIC.
+1429:CMSIS/Include/core_cm3.h ****   @{
+1430:CMSIS/Include/core_cm3.h ****  */
+1431:CMSIS/Include/core_cm3.h **** 
+1432:CMSIS/Include/core_cm3.h **** #ifdef CMSIS_NVIC_VIRTUAL
+1433:CMSIS/Include/core_cm3.h ****   #ifndef CMSIS_NVIC_VIRTUAL_HEADER_FILE
+1434:CMSIS/Include/core_cm3.h ****     #define CMSIS_NVIC_VIRTUAL_HEADER_FILE "cmsis_nvic_virtual.h"
+1435:CMSIS/Include/core_cm3.h ****   #endif
+1436:CMSIS/Include/core_cm3.h ****   #include CMSIS_NVIC_VIRTUAL_HEADER_FILE
+1437:CMSIS/Include/core_cm3.h **** #else
+1438:CMSIS/Include/core_cm3.h ****   #define NVIC_SetPriorityGrouping    __NVIC_SetPriorityGrouping
+1439:CMSIS/Include/core_cm3.h ****   #define NVIC_GetPriorityGrouping    __NVIC_GetPriorityGrouping
+1440:CMSIS/Include/core_cm3.h ****   #define NVIC_EnableIRQ              __NVIC_EnableIRQ
+1441:CMSIS/Include/core_cm3.h ****   #define NVIC_GetEnableIRQ           __NVIC_GetEnableIRQ
+1442:CMSIS/Include/core_cm3.h ****   #define NVIC_DisableIRQ             __NVIC_DisableIRQ
+1443:CMSIS/Include/core_cm3.h ****   #define NVIC_GetPendingIRQ          __NVIC_GetPendingIRQ
+1444:CMSIS/Include/core_cm3.h ****   #define NVIC_SetPendingIRQ          __NVIC_SetPendingIRQ
+1445:CMSIS/Include/core_cm3.h ****   #define NVIC_ClearPendingIRQ        __NVIC_ClearPendingIRQ
+1446:CMSIS/Include/core_cm3.h ****   #define NVIC_GetActive              __NVIC_GetActive
+1447:CMSIS/Include/core_cm3.h ****   #define NVIC_SetPriority            __NVIC_SetPriority
+1448:CMSIS/Include/core_cm3.h ****   #define NVIC_GetPriority            __NVIC_GetPriority
+1449:CMSIS/Include/core_cm3.h ****   #define NVIC_SystemReset            __NVIC_SystemReset
+1450:CMSIS/Include/core_cm3.h **** #endif /* CMSIS_NVIC_VIRTUAL */
+1451:CMSIS/Include/core_cm3.h **** 
+1452:CMSIS/Include/core_cm3.h **** #ifdef CMSIS_VECTAB_VIRTUAL
+1453:CMSIS/Include/core_cm3.h ****   #ifndef CMSIS_VECTAB_VIRTUAL_HEADER_FILE
+1454:CMSIS/Include/core_cm3.h ****    #define CMSIS_VECTAB_VIRTUAL_HEADER_FILE "cmsis_vectab_virtual.h"
+1455:CMSIS/Include/core_cm3.h ****   #endif
+1456:CMSIS/Include/core_cm3.h ****   #include CMSIS_VECTAB_VIRTUAL_HEADER_FILE
+1457:CMSIS/Include/core_cm3.h **** #else
+1458:CMSIS/Include/core_cm3.h ****   #define NVIC_SetVector              __NVIC_SetVector
+1459:CMSIS/Include/core_cm3.h ****   #define NVIC_GetVector              __NVIC_GetVector
+1460:CMSIS/Include/core_cm3.h **** #endif  /* (CMSIS_VECTAB_VIRTUAL) */
+1461:CMSIS/Include/core_cm3.h **** 
+1462:CMSIS/Include/core_cm3.h **** #define NVIC_USER_IRQ_OFFSET          16
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 36
+
+
+1463:CMSIS/Include/core_cm3.h **** 
+1464:CMSIS/Include/core_cm3.h **** 
+1465:CMSIS/Include/core_cm3.h **** /* The following EXC_RETURN values are saved the LR on exception entry */
+1466:CMSIS/Include/core_cm3.h **** #define EXC_RETURN_HANDLER         (0xFFFFFFF1UL)     /* return to Handler mode, uses MSP after ret
+1467:CMSIS/Include/core_cm3.h **** #define EXC_RETURN_THREAD_MSP      (0xFFFFFFF9UL)     /* return to Thread mode, uses MSP after retu
+1468:CMSIS/Include/core_cm3.h **** #define EXC_RETURN_THREAD_PSP      (0xFFFFFFFDUL)     /* return to Thread mode, uses PSP after retu
+1469:CMSIS/Include/core_cm3.h **** 
+1470:CMSIS/Include/core_cm3.h **** 
+1471:CMSIS/Include/core_cm3.h **** /**
+1472:CMSIS/Include/core_cm3.h ****   \brief   Set Priority Grouping
+1473:CMSIS/Include/core_cm3.h ****   \details Sets the priority grouping field using the required unlock sequence.
+1474:CMSIS/Include/core_cm3.h ****            The parameter PriorityGroup is assigned to the field SCB->AIRCR [10:8] PRIGROUP field.
+1475:CMSIS/Include/core_cm3.h ****            Only values from 0..7 are used.
+1476:CMSIS/Include/core_cm3.h ****            In case of a conflict between priority grouping and available
+1477:CMSIS/Include/core_cm3.h ****            priority bits (__NVIC_PRIO_BITS), the smallest possible priority group is set.
+1478:CMSIS/Include/core_cm3.h ****   \param [in]      PriorityGroup  Priority grouping field.
+1479:CMSIS/Include/core_cm3.h ****  */
+1480:CMSIS/Include/core_cm3.h **** __STATIC_INLINE void __NVIC_SetPriorityGrouping(uint32_t PriorityGroup)
+1481:CMSIS/Include/core_cm3.h **** {
+1482:CMSIS/Include/core_cm3.h ****   uint32_t reg_value;
+1483:CMSIS/Include/core_cm3.h ****   uint32_t PriorityGroupTmp = (PriorityGroup & (uint32_t)0x07UL);             /* only values 0..7 a
+1484:CMSIS/Include/core_cm3.h **** 
+1485:CMSIS/Include/core_cm3.h ****   reg_value  =  SCB->AIRCR;                                                   /* read old register 
+1486:CMSIS/Include/core_cm3.h ****   reg_value &= ~((uint32_t)(SCB_AIRCR_VECTKEY_Msk | SCB_AIRCR_PRIGROUP_Msk)); /* clear bits to chan
+1487:CMSIS/Include/core_cm3.h ****   reg_value  =  (reg_value                                   |
+1488:CMSIS/Include/core_cm3.h ****                 ((uint32_t)0x5FAUL << SCB_AIRCR_VECTKEY_Pos) |
+1489:CMSIS/Include/core_cm3.h ****                 (PriorityGroupTmp << SCB_AIRCR_PRIGROUP_Pos) );               /* Insert write key a
+1490:CMSIS/Include/core_cm3.h ****   SCB->AIRCR =  reg_value;
+1491:CMSIS/Include/core_cm3.h **** }
+1492:CMSIS/Include/core_cm3.h **** 
+1493:CMSIS/Include/core_cm3.h **** 
+1494:CMSIS/Include/core_cm3.h **** /**
+1495:CMSIS/Include/core_cm3.h ****   \brief   Get Priority Grouping
+1496:CMSIS/Include/core_cm3.h ****   \details Reads the priority grouping field from the NVIC Interrupt Controller.
+1497:CMSIS/Include/core_cm3.h ****   \return                Priority grouping field (SCB->AIRCR [10:8] PRIGROUP field).
+1498:CMSIS/Include/core_cm3.h ****  */
+1499:CMSIS/Include/core_cm3.h **** __STATIC_INLINE uint32_t __NVIC_GetPriorityGrouping(void)
+1500:CMSIS/Include/core_cm3.h **** {
+1501:CMSIS/Include/core_cm3.h ****   return ((uint32_t)((SCB->AIRCR & SCB_AIRCR_PRIGROUP_Msk) >> SCB_AIRCR_PRIGROUP_Pos));
+1502:CMSIS/Include/core_cm3.h **** }
+1503:CMSIS/Include/core_cm3.h **** 
+1504:CMSIS/Include/core_cm3.h **** 
+1505:CMSIS/Include/core_cm3.h **** /**
+1506:CMSIS/Include/core_cm3.h ****   \brief   Enable Interrupt
+1507:CMSIS/Include/core_cm3.h ****   \details Enables a device specific interrupt in the NVIC interrupt controller.
+1508:CMSIS/Include/core_cm3.h ****   \param [in]      IRQn  Device specific interrupt number.
+1509:CMSIS/Include/core_cm3.h ****   \note    IRQn must not be negative.
+1510:CMSIS/Include/core_cm3.h ****  */
+1511:CMSIS/Include/core_cm3.h **** __STATIC_INLINE void __NVIC_EnableIRQ(IRQn_Type IRQn)
+1512:CMSIS/Include/core_cm3.h **** {
+1513:CMSIS/Include/core_cm3.h ****   if ((int32_t)(IRQn) >= 0)
+1514:CMSIS/Include/core_cm3.h ****   {
+1515:CMSIS/Include/core_cm3.h ****     NVIC->ISER[(((uint32_t)IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)IRQn) & 0x1FUL));
+1516:CMSIS/Include/core_cm3.h ****   }
+1517:CMSIS/Include/core_cm3.h **** }
+1518:CMSIS/Include/core_cm3.h **** 
+1519:CMSIS/Include/core_cm3.h **** 
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 37
+
+
+1520:CMSIS/Include/core_cm3.h **** /**
+1521:CMSIS/Include/core_cm3.h ****   \brief   Get Interrupt Enable status
+1522:CMSIS/Include/core_cm3.h ****   \details Returns a device specific interrupt enable status from the NVIC interrupt controller.
+1523:CMSIS/Include/core_cm3.h ****   \param [in]      IRQn  Device specific interrupt number.
+1524:CMSIS/Include/core_cm3.h ****   \return             0  Interrupt is not enabled.
+1525:CMSIS/Include/core_cm3.h ****   \return             1  Interrupt is enabled.
+1526:CMSIS/Include/core_cm3.h ****   \note    IRQn must not be negative.
+1527:CMSIS/Include/core_cm3.h ****  */
+1528:CMSIS/Include/core_cm3.h **** __STATIC_INLINE uint32_t __NVIC_GetEnableIRQ(IRQn_Type IRQn)
+1529:CMSIS/Include/core_cm3.h **** {
+1530:CMSIS/Include/core_cm3.h ****   if ((int32_t)(IRQn) >= 0)
+1531:CMSIS/Include/core_cm3.h ****   {
+1532:CMSIS/Include/core_cm3.h ****     return((uint32_t)(((NVIC->ISER[(((uint32_t)IRQn) >> 5UL)] & (1UL << (((uint32_t)IRQn) & 0x1FUL)
+1533:CMSIS/Include/core_cm3.h ****   }
+1534:CMSIS/Include/core_cm3.h ****   else
+1535:CMSIS/Include/core_cm3.h ****   {
+1536:CMSIS/Include/core_cm3.h ****     return(0U);
+1537:CMSIS/Include/core_cm3.h ****   }
+1538:CMSIS/Include/core_cm3.h **** }
+1539:CMSIS/Include/core_cm3.h **** 
+1540:CMSIS/Include/core_cm3.h **** 
+1541:CMSIS/Include/core_cm3.h **** /**
+1542:CMSIS/Include/core_cm3.h ****   \brief   Disable Interrupt
+1543:CMSIS/Include/core_cm3.h ****   \details Disables a device specific interrupt in the NVIC interrupt controller.
+1544:CMSIS/Include/core_cm3.h ****   \param [in]      IRQn  Device specific interrupt number.
+1545:CMSIS/Include/core_cm3.h ****   \note    IRQn must not be negative.
+1546:CMSIS/Include/core_cm3.h ****  */
+1547:CMSIS/Include/core_cm3.h **** __STATIC_INLINE void __NVIC_DisableIRQ(IRQn_Type IRQn)
+1548:CMSIS/Include/core_cm3.h **** {
+1549:CMSIS/Include/core_cm3.h ****   if ((int32_t)(IRQn) >= 0)
+1550:CMSIS/Include/core_cm3.h ****   {
+1551:CMSIS/Include/core_cm3.h ****     NVIC->ICER[(((uint32_t)IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)IRQn) & 0x1FUL));
+1552:CMSIS/Include/core_cm3.h ****     __DSB();
+1553:CMSIS/Include/core_cm3.h ****     __ISB();
+1554:CMSIS/Include/core_cm3.h ****   }
+1555:CMSIS/Include/core_cm3.h **** }
+1556:CMSIS/Include/core_cm3.h **** 
+1557:CMSIS/Include/core_cm3.h **** 
+1558:CMSIS/Include/core_cm3.h **** /**
+1559:CMSIS/Include/core_cm3.h ****   \brief   Get Pending Interrupt
+1560:CMSIS/Include/core_cm3.h ****   \details Reads the NVIC pending register and returns the pending bit for the specified device spe
+1561:CMSIS/Include/core_cm3.h ****   \param [in]      IRQn  Device specific interrupt number.
+1562:CMSIS/Include/core_cm3.h ****   \return             0  Interrupt status is not pending.
+1563:CMSIS/Include/core_cm3.h ****   \return             1  Interrupt status is pending.
+1564:CMSIS/Include/core_cm3.h ****   \note    IRQn must not be negative.
+1565:CMSIS/Include/core_cm3.h ****  */
+1566:CMSIS/Include/core_cm3.h **** __STATIC_INLINE uint32_t __NVIC_GetPendingIRQ(IRQn_Type IRQn)
+1567:CMSIS/Include/core_cm3.h **** {
+1568:CMSIS/Include/core_cm3.h ****   if ((int32_t)(IRQn) >= 0)
+1569:CMSIS/Include/core_cm3.h ****   {
+1570:CMSIS/Include/core_cm3.h ****     return((uint32_t)(((NVIC->ISPR[(((uint32_t)IRQn) >> 5UL)] & (1UL << (((uint32_t)IRQn) & 0x1FUL)
+1571:CMSIS/Include/core_cm3.h ****   }
+1572:CMSIS/Include/core_cm3.h ****   else
+1573:CMSIS/Include/core_cm3.h ****   {
+1574:CMSIS/Include/core_cm3.h ****     return(0U);
+1575:CMSIS/Include/core_cm3.h ****   }
+1576:CMSIS/Include/core_cm3.h **** }
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 38
+
+
+1577:CMSIS/Include/core_cm3.h **** 
+1578:CMSIS/Include/core_cm3.h **** 
+1579:CMSIS/Include/core_cm3.h **** /**
+1580:CMSIS/Include/core_cm3.h ****   \brief   Set Pending Interrupt
+1581:CMSIS/Include/core_cm3.h ****   \details Sets the pending bit of a device specific interrupt in the NVIC pending register.
+1582:CMSIS/Include/core_cm3.h ****   \param [in]      IRQn  Device specific interrupt number.
+1583:CMSIS/Include/core_cm3.h ****   \note    IRQn must not be negative.
+1584:CMSIS/Include/core_cm3.h ****  */
+1585:CMSIS/Include/core_cm3.h **** __STATIC_INLINE void __NVIC_SetPendingIRQ(IRQn_Type IRQn)
+1586:CMSIS/Include/core_cm3.h **** {
+1587:CMSIS/Include/core_cm3.h ****   if ((int32_t)(IRQn) >= 0)
+1588:CMSIS/Include/core_cm3.h ****   {
+1589:CMSIS/Include/core_cm3.h ****     NVIC->ISPR[(((uint32_t)IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)IRQn) & 0x1FUL));
+1590:CMSIS/Include/core_cm3.h ****   }
+1591:CMSIS/Include/core_cm3.h **** }
+1592:CMSIS/Include/core_cm3.h **** 
+1593:CMSIS/Include/core_cm3.h **** 
+1594:CMSIS/Include/core_cm3.h **** /**
+1595:CMSIS/Include/core_cm3.h ****   \brief   Clear Pending Interrupt
+1596:CMSIS/Include/core_cm3.h ****   \details Clears the pending bit of a device specific interrupt in the NVIC pending register.
+1597:CMSIS/Include/core_cm3.h ****   \param [in]      IRQn  Device specific interrupt number.
+1598:CMSIS/Include/core_cm3.h ****   \note    IRQn must not be negative.
+1599:CMSIS/Include/core_cm3.h ****  */
+1600:CMSIS/Include/core_cm3.h **** __STATIC_INLINE void __NVIC_ClearPendingIRQ(IRQn_Type IRQn)
+1601:CMSIS/Include/core_cm3.h **** {
+1602:CMSIS/Include/core_cm3.h ****   if ((int32_t)(IRQn) >= 0)
+1603:CMSIS/Include/core_cm3.h ****   {
+1604:CMSIS/Include/core_cm3.h ****     NVIC->ICPR[(((uint32_t)IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)IRQn) & 0x1FUL));
+1605:CMSIS/Include/core_cm3.h ****   }
+1606:CMSIS/Include/core_cm3.h **** }
+1607:CMSIS/Include/core_cm3.h **** 
+1608:CMSIS/Include/core_cm3.h **** 
+1609:CMSIS/Include/core_cm3.h **** /**
+1610:CMSIS/Include/core_cm3.h ****   \brief   Get Active Interrupt
+1611:CMSIS/Include/core_cm3.h ****   \details Reads the active register in the NVIC and returns the active bit for the device specific
+1612:CMSIS/Include/core_cm3.h ****   \param [in]      IRQn  Device specific interrupt number.
+1613:CMSIS/Include/core_cm3.h ****   \return             0  Interrupt status is not active.
+1614:CMSIS/Include/core_cm3.h ****   \return             1  Interrupt status is active.
+1615:CMSIS/Include/core_cm3.h ****   \note    IRQn must not be negative.
+1616:CMSIS/Include/core_cm3.h ****  */
+1617:CMSIS/Include/core_cm3.h **** __STATIC_INLINE uint32_t __NVIC_GetActive(IRQn_Type IRQn)
+1618:CMSIS/Include/core_cm3.h **** {
+1619:CMSIS/Include/core_cm3.h ****   if ((int32_t)(IRQn) >= 0)
+1620:CMSIS/Include/core_cm3.h ****   {
+1621:CMSIS/Include/core_cm3.h ****     return((uint32_t)(((NVIC->IABR[(((uint32_t)IRQn) >> 5UL)] & (1UL << (((uint32_t)IRQn) & 0x1FUL)
+1622:CMSIS/Include/core_cm3.h ****   }
+1623:CMSIS/Include/core_cm3.h ****   else
+1624:CMSIS/Include/core_cm3.h ****   {
+1625:CMSIS/Include/core_cm3.h ****     return(0U);
+1626:CMSIS/Include/core_cm3.h ****   }
+1627:CMSIS/Include/core_cm3.h **** }
+1628:CMSIS/Include/core_cm3.h **** 
+1629:CMSIS/Include/core_cm3.h **** 
+1630:CMSIS/Include/core_cm3.h **** /**
+1631:CMSIS/Include/core_cm3.h ****   \brief   Set Interrupt Priority
+1632:CMSIS/Include/core_cm3.h ****   \details Sets the priority of a device specific interrupt or a processor exception.
+1633:CMSIS/Include/core_cm3.h ****            The interrupt number can be positive to specify a device specific interrupt,
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 39
+
+
+1634:CMSIS/Include/core_cm3.h ****            or negative to specify a processor exception.
+1635:CMSIS/Include/core_cm3.h ****   \param [in]      IRQn  Interrupt number.
+1636:CMSIS/Include/core_cm3.h ****   \param [in]  priority  Priority to set.
+1637:CMSIS/Include/core_cm3.h ****   \note    The priority cannot be set for every processor exception.
+1638:CMSIS/Include/core_cm3.h ****  */
+1639:CMSIS/Include/core_cm3.h **** __STATIC_INLINE void __NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority)
+ 442              		.loc 2 1639 22 view .LVU121
+ 443              	.LBB8:
+1640:CMSIS/Include/core_cm3.h **** {
+1641:CMSIS/Include/core_cm3.h ****   if ((int32_t)(IRQn) >= 0)
+ 444              		.loc 2 1641 3 view .LVU122
+1642:CMSIS/Include/core_cm3.h ****   {
+1643:CMSIS/Include/core_cm3.h ****     NVIC->IP[((uint32_t)IRQn)]               = (uint8_t)((priority << (8U - __NVIC_PRIO_BITS)) & (u
+ 445              		.loc 2 1643 5 view .LVU123
+ 446              		.loc 2 1643 46 is_stmt 0 view .LVU124
+ 447 0020 064A     		ldr	r2, .L35+4
+ 448 0022 0021     		movs	r1, #0
+ 449 0024 82F81C13 		strb	r1, [r2, #796]
+ 450              	.LVL39:
+ 451              		.loc 2 1643 46 view .LVU125
+ 452              	.LBE8:
+ 453              	.LBE7:
+  96:Core/Src/main.c ****     NVIC_EnableIRQ(TIM2_IRQn);
+ 454              		.loc 1 96 5 is_stmt 1 view .LVU126
+ 455              	.LBB9:
+ 456              	.LBI9:
+1511:CMSIS/Include/core_cm3.h **** {
+ 457              		.loc 2 1511 22 view .LVU127
+ 458              	.LBB10:
+1513:CMSIS/Include/core_cm3.h ****   {
+ 459              		.loc 2 1513 3 view .LVU128
+1515:CMSIS/Include/core_cm3.h ****   }
+ 460              		.loc 2 1515 5 view .LVU129
+1515:CMSIS/Include/core_cm3.h ****   }
+ 461              		.loc 2 1515 43 is_stmt 0 view .LVU130
+ 462 0028 4FF08051 		mov	r1, #268435456
+ 463 002c 1160     		str	r1, [r2]
+ 464              	.LVL40:
+1515:CMSIS/Include/core_cm3.h ****   }
+ 465              		.loc 2 1515 43 view .LVU131
+ 466              	.LBE10:
+ 467              	.LBE9:
+  97:Core/Src/main.c ****     TIM2->CR1 |= TIM_CR1_CEN;
+ 468              		.loc 1 97 5 is_stmt 1 view .LVU132
+ 469              		.loc 1 97 9 is_stmt 0 view .LVU133
+ 470 002e 1A68     		ldr	r2, [r3]
+ 471              		.loc 1 97 15 view .LVU134
+ 472 0030 42F00102 		orr	r2, r2, #1
+ 473 0034 1A60     		str	r2, [r3]
+  98:Core/Src/main.c **** }...
+ 474              		.loc 1 98 1 view .LVU135
+ 475 0036 7047     		bx	lr
+ 476              	.L36:
+ 477              		.align	2
+ 478              	.L35:
+ 479 0038 00100240 		.word	1073876992
+ 480 003c 00E100E0 		.word	-536813312
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 40
+
+
+ 481              		.cfi_endproc
+ 482              	.LFE68:
+ 484              		.section	.text.main,"ax",%progbits
+ 485              		.align	1
+ 486              		.global	main
+ 487              		.syntax unified
+ 488              		.thumb
+ 489              		.thumb_func
+ 491              	main:
+ 492              	.LFB66:
+  55:Core/Src/main.c **** int main(void) {
+ 493              		.loc 1 55 16 is_stmt 1 view -0
+ 494              		.cfi_startproc
+ 495              		@ args = 0, pretend = 0, frame = 0
+ 496              		@ frame_needed = 0, uses_anonymous_args = 0
+ 497 0000 10B5     		push	{r4, lr}
+ 498              	.LCFI1:
+ 499              		.cfi_def_cfa_offset 8
+ 500              		.cfi_offset 4, -8
+ 501              		.cfi_offset 14, -4
+  56:Core/Src/main.c ****     Clock_Config_72MHz(); 
+ 502              		.loc 1 56 5 view .LVU137
+ 503 0002 FFF7FEFF 		bl	Clock_Config_72MHz
+ 504              	.LVL41:
+  57:Core/Src/main.c ****     Timer2_Init_1200Hz();
+ 505              		.loc 1 57 5 view .LVU138
+ 506 0006 FFF7FEFF 		bl	Timer2_Init_1200Hz
+ 507              	.LVL42:
+  59:Core/Src/main.c ****     const float invT1 = 1.0f / T1;
+ 508              		.loc 1 59 5 view .LVU139
+  60:Core/Src/main.c ****     const float invT2 = 1.0f / T2;
+ 509              		.loc 1 60 5 view .LVU140
+  61:Core/Src/main.c ****     const float invT4 = 1.0f / T4;
+ 510              		.loc 1 61 5 view .LVU141
+  62:Core/Src/main.c ****     const float dt = SIM_DT_FAST;
+ 511              		.loc 1 62 5 view .LVU142
+  62:Core/Src/main.c ****     const float dt = SIM_DT_FAST;
+ 512              		.loc 1 62 5 is_stmt 0 view .LVU143
+ 513 000a 02E0     		b	.L38
+ 514              	.LVL43:
+ 515              	.L39:
+ 516              	.LBB11:
+  74:Core/Src/main.c ****             system_fault = 1; 
+ 517              		.loc 1 74 13 is_stmt 1 view .LVU144
+  74:Core/Src/main.c ****             system_fault = 1; 
+ 518              		.loc 1 74 26 is_stmt 0 view .LVU145
+ 519 000c 2D4B     		ldr	r3, .L43
+ 520 000e 0122     		movs	r2, #1
+ 521 0010 1A70     		strb	r2, [r3]
+ 522              	.LVL44:
+ 523              	.L38:
+  74:Core/Src/main.c ****             system_fault = 1; 
+ 524              		.loc 1 74 26 view .LVU146
+ 525              	.LBE11:
+  64:Core/Src/main.c ****     while(1) {
+ 526              		.loc 1 64 5 is_stmt 1 view .LVU147
+ 527              	.LBB12:
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 41
+
+
+  65:Core/Src/main.c ****         float u_in = current_x1 * GAIN_FIX;
+ 528              		.loc 1 65 9 view .LVU148
+  65:Core/Src/main.c ****         float u_in = current_x1 * GAIN_FIX;
+ 529              		.loc 1 65 33 is_stmt 0 view .LVU149
+ 530 0012 2D4B     		ldr	r3, .L43+4
+ 531 0014 1868     		ldr	r0, [r3]	@ float
+  65:Core/Src/main.c ****         float u_in = current_x1 * GAIN_FIX;
+ 532              		.loc 1 65 15 view .LVU150
+ 533 0016 2D49     		ldr	r1, .L43+8
+ 534 0018 FFF7FEFF 		bl	__aeabi_fmul
+ 535              	.LVL45:
+  68:Core/Src/main.c ****         Y1_st += (K1 * u_in - Y1_st) * invT1 * dt;
+ 536              		.loc 1 68 9 is_stmt 1 view .LVU151
+  68:Core/Src/main.c ****         Y1_st += (K1 * u_in - Y1_st) * invT1 * dt;
+ 537              		.loc 1 68 22 is_stmt 0 view .LVU152
+ 538 001c 2C49     		ldr	r1, .L43+12
+ 539 001e FFF7FEFF 		bl	__aeabi_fmul
+ 540              	.LVL46:
+  68:Core/Src/main.c ****         Y1_st += (K1 * u_in - Y1_st) * invT1 * dt;
+ 541              		.loc 1 68 29 view .LVU153
+ 542 0022 2C4C     		ldr	r4, .L43+16
+ 543 0024 2168     		ldr	r1, [r4]	@ float
+ 544 0026 FFF7FEFF 		bl	__aeabi_fsub
+ 545              	.LVL47:
+  68:Core/Src/main.c ****         Y1_st += (K1 * u_in - Y1_st) * invT1 * dt;
+ 546              		.loc 1 68 38 view .LVU154
+ 547 002a 2B49     		ldr	r1, .L43+20
+ 548 002c FFF7FEFF 		bl	__aeabi_fmul
+ 549              	.LVL48:
+  68:Core/Src/main.c ****         Y1_st += (K1 * u_in - Y1_st) * invT1 * dt;
+ 550              		.loc 1 68 46 view .LVU155
+ 551 0030 2A49     		ldr	r1, .L43+24
+ 552 0032 FFF7FEFF 		bl	__aeabi_fmul
+ 553              	.LVL49:
+ 554 0036 0146     		mov	r1, r0
+  68:Core/Src/main.c ****         Y1_st += (K1 * u_in - Y1_st) * invT1 * dt;
+ 555              		.loc 1 68 15 view .LVU156
+ 556 0038 2068     		ldr	r0, [r4]	@ float
+ 557 003a FFF7FEFF 		bl	__aeabi_fadd
+ 558              	.LVL50:
+ 559 003e 2060     		str	r0, [r4]	@ float
+  69:Core/Src/main.c ****         Y2_st += (K3 * Y1_st - Y2_st) * invT2 * dt;
+ 560              		.loc 1 69 9 is_stmt 1 view .LVU157
+  69:Core/Src/main.c ****         Y2_st += (K3 * Y1_st - Y2_st) * invT2 * dt;
+ 561              		.loc 1 69 22 is_stmt 0 view .LVU158
+ 562 0040 2068     		ldr	r0, [r4]	@ float
+ 563 0042 2749     		ldr	r1, .L43+28
+ 564 0044 FFF7FEFF 		bl	__aeabi_fmul
+ 565              	.LVL51:
+  69:Core/Src/main.c ****         Y2_st += (K3 * Y1_st - Y2_st) * invT2 * dt;
+ 566              		.loc 1 69 30 view .LVU159
+ 567 0048 264C     		ldr	r4, .L43+32
+ 568 004a 2168     		ldr	r1, [r4]	@ float
+ 569 004c FFF7FEFF 		bl	__aeabi_fsub
+ 570              	.LVL52:
+  69:Core/Src/main.c ****         Y2_st += (K3 * Y1_st - Y2_st) * invT2 * dt;
+ 571              		.loc 1 69 39 view .LVU160
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 42
+
+
+ 572 0050 2549     		ldr	r1, .L43+36
+ 573 0052 FFF7FEFF 		bl	__aeabi_fmul
+ 574              	.LVL53:
+  69:Core/Src/main.c ****         Y2_st += (K3 * Y1_st - Y2_st) * invT2 * dt;
+ 575              		.loc 1 69 47 view .LVU161
+ 576 0056 2149     		ldr	r1, .L43+24
+ 577 0058 FFF7FEFF 		bl	__aeabi_fmul
+ 578              	.LVL54:
+ 579 005c 0146     		mov	r1, r0
+  69:Core/Src/main.c ****         Y2_st += (K3 * Y1_st - Y2_st) * invT2 * dt;
+ 580              		.loc 1 69 15 view .LVU162
+ 581 005e 2068     		ldr	r0, [r4]	@ float
+ 582 0060 FFF7FEFF 		bl	__aeabi_fadd
+ 583              	.LVL55:
+ 584 0064 2060     		str	r0, [r4]	@ float
+  70:Core/Src/main.c ****         Y4_st += (K4 * Y2_st - Y4_st) * invT4 * dt;
+ 585              		.loc 1 70 9 is_stmt 1 view .LVU163
+  70:Core/Src/main.c ****         Y4_st += (K4 * Y2_st - Y4_st) * invT4 * dt;
+ 586              		.loc 1 70 22 is_stmt 0 view .LVU164
+ 587 0066 2068     		ldr	r0, [r4]	@ float
+ 588 0068 2049     		ldr	r1, .L43+40
+ 589 006a FFF7FEFF 		bl	__aeabi_fmul
+ 590              	.LVL56:
+  70:Core/Src/main.c ****         Y4_st += (K4 * Y2_st - Y4_st) * invT4 * dt;
+ 591              		.loc 1 70 30 view .LVU165
+ 592 006e 204C     		ldr	r4, .L43+44
+ 593 0070 2168     		ldr	r1, [r4]	@ float
+ 594 0072 FFF7FEFF 		bl	__aeabi_fsub
+ 595              	.LVL57:
+  70:Core/Src/main.c ****         Y4_st += (K4 * Y2_st - Y4_st) * invT4 * dt;
+ 596              		.loc 1 70 39 view .LVU166
+ 597 0076 1F49     		ldr	r1, .L43+48
+ 598 0078 FFF7FEFF 		bl	__aeabi_fmul
+ 599              	.LVL58:
+  70:Core/Src/main.c ****         Y4_st += (K4 * Y2_st - Y4_st) * invT4 * dt;
+ 600              		.loc 1 70 47 view .LVU167
+ 601 007c 1749     		ldr	r1, .L43+24
+ 602 007e FFF7FEFF 		bl	__aeabi_fmul
+ 603              	.LVL59:
+ 604 0082 0146     		mov	r1, r0
+  70:Core/Src/main.c ****         Y4_st += (K4 * Y2_st - Y4_st) * invT4 * dt;
+ 605              		.loc 1 70 15 view .LVU168
+ 606 0084 2068     		ldr	r0, [r4]	@ float
+ 607 0086 FFF7FEFF 		bl	__aeabi_fadd
+ 608              	.LVL60:
+ 609 008a 2060     		str	r0, [r4]	@ float
+  73:Core/Src/main.c ****         if (Y4_st > SPEED_LIMIT || Y4_st < -SPEED_LIMIT || Y2_st > Y2_LIMIT || Y2_st < -Y2_LIMIT) {
+ 610              		.loc 1 73 9 is_stmt 1 view .LVU169
+  73:Core/Src/main.c ****         if (Y4_st > SPEED_LIMIT || Y4_st < -SPEED_LIMIT || Y2_st > Y2_LIMIT || Y2_st < -Y2_LIMIT) {
+ 611              		.loc 1 73 19 is_stmt 0 view .LVU170
+ 612 008c 2068     		ldr	r0, [r4]	@ float
+  73:Core/Src/main.c ****         if (Y4_st > SPEED_LIMIT || Y4_st < -SPEED_LIMIT || Y2_st > Y2_LIMIT || Y2_st < -Y2_LIMIT) {
+ 613              		.loc 1 73 12 view .LVU171
+ 614 008e 1A49     		ldr	r1, .L43+52
+ 615 0090 FFF7FEFF 		bl	__aeabi_fcmpgt
+ 616              	.LVL61:
+ 617 0094 0028     		cmp	r0, #0
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 43
+
+
+ 618 0096 B9D1     		bne	.L39
+  73:Core/Src/main.c ****         if (Y4_st > SPEED_LIMIT || Y4_st < -SPEED_LIMIT || Y2_st > Y2_LIMIT || Y2_st < -Y2_LIMIT) {
+ 619              		.loc 1 73 42 discriminator 1 view .LVU172
+ 620 0098 2068     		ldr	r0, [r4]	@ float
+  73:Core/Src/main.c ****         if (Y4_st > SPEED_LIMIT || Y4_st < -SPEED_LIMIT || Y2_st > Y2_LIMIT || Y2_st < -Y2_LIMIT) {
+ 621              		.loc 1 73 33 discriminator 1 view .LVU173
+ 622 009a 1849     		ldr	r1, .L43+56
+ 623 009c FFF7FEFF 		bl	__aeabi_fcmplt
+ 624              	.LVL62:
+ 625 00a0 0028     		cmp	r0, #0
+ 626 00a2 B3D1     		bne	.L39
+  73:Core/Src/main.c ****         if (Y4_st > SPEED_LIMIT || Y4_st < -SPEED_LIMIT || Y2_st > Y2_LIMIT || Y2_st < -Y2_LIMIT) {
+ 627              		.loc 1 73 66 discriminator 2 view .LVU174
+ 628 00a4 0F4B     		ldr	r3, .L43+32
+ 629 00a6 1868     		ldr	r0, [r3]	@ float
+  73:Core/Src/main.c ****         if (Y4_st > SPEED_LIMIT || Y4_st < -SPEED_LIMIT || Y2_st > Y2_LIMIT || Y2_st < -Y2_LIMIT) {
+ 630              		.loc 1 73 57 discriminator 2 view .LVU175
+ 631 00a8 1549     		ldr	r1, .L43+60
+ 632 00aa FFF7FEFF 		bl	__aeabi_fcmpgt
+ 633              	.LVL63:
+ 634 00ae 0028     		cmp	r0, #0
+ 635 00b0 ACD1     		bne	.L39
+  73:Core/Src/main.c ****         if (Y4_st > SPEED_LIMIT || Y4_st < -SPEED_LIMIT || Y2_st > Y2_LIMIT || Y2_st < -Y2_LIMIT) {
+ 636              		.loc 1 73 86 discriminator 3 view .LVU176
+ 637 00b2 0C4B     		ldr	r3, .L43+32
+ 638 00b4 1868     		ldr	r0, [r3]	@ float
+  73:Core/Src/main.c ****         if (Y4_st > SPEED_LIMIT || Y4_st < -SPEED_LIMIT || Y2_st > Y2_LIMIT || Y2_st < -Y2_LIMIT) {
+ 639              		.loc 1 73 77 discriminator 3 view .LVU177
+ 640 00b6 1349     		ldr	r1, .L43+64
+ 641 00b8 FFF7FEFF 		bl	__aeabi_fcmplt
+ 642              	.LVL64:
+ 643 00bc 0028     		cmp	r0, #0
+ 644 00be A8D0     		beq	.L38
+ 645 00c0 A4E7     		b	.L39
+ 646              	.L44:
+ 647 00c2 00BF     		.align	2
+ 648              	.L43:
+ 649 00c4 00000000 		.word	system_fault
+ 650 00c8 00000000 		.word	current_x1
+ 651 00cc C74BA841 		.word	1101548487
+ 652 00d0 CDCC4C41 		.word	1095552205
+ 653 00d4 00000000 		.word	Y1_st
+ 654 00d8 ABAAA643 		.word	1134996139
+ 655 00dc 17B7D138 		.word	953267991
+ 656 00e0 9A99F93F 		.word	1073322394
+ 657 00e4 00000000 		.word	Y2_st
+ 658 00e8 B3F69841 		.word	1100543667
+ 659 00ec 3D0A3740 		.word	1077348925
+ 660 00f0 00000000 		.word	Y4_st
+ 661 00f4 F9067940 		.word	1081673465
+ 662 00f8 00C04145 		.word	1161936896
+ 663 00fc 00C041C5 		.word	-985546752
+ 664 0100 00808944 		.word	1149861888
+ 665 0104 008089C4 		.word	-997621760
+ 666              	.LBE12:
+ 667              		.cfi_endproc
+ 668              	.LFE66:
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 44
+
+
+ 670              		.global	i_term2
+ 671              		.section	.bss.i_term2,"aw",%nobits
+ 672              		.align	2
+ 675              	i_term2:
+ 676 0000 00000000 		.space	4
+ 677              		.global	i_term1
+ 678              		.section	.bss.i_term1,"aw",%nobits
+ 679              		.align	2
+ 682              	i_term1:
+ 683 0000 00000000 		.space	4
+ 684              		.global	system_fault
+ 685              		.section	.bss.system_fault,"aw",%nobits
+ 688              	system_fault:
+ 689 0000 00       		.space	1
+ 690              		.global	current_x1
+ 691              		.section	.bss.current_x1,"aw",%nobits
+ 692              		.align	2
+ 695              	current_x1:
+ 696 0000 00000000 		.space	4
+ 697              		.global	Y4_st
+ 698              		.section	.bss.Y4_st,"aw",%nobits
+ 699              		.align	2
+ 702              	Y4_st:
+ 703 0000 00000000 		.space	4
+ 704              		.global	Y2_st
+ 705              		.section	.bss.Y2_st,"aw",%nobits
+ 706              		.align	2
+ 709              	Y2_st:
+ 710 0000 00000000 		.space	4
+ 711              		.global	Y1_st
+ 712              		.section	.bss.Y1_st,"aw",%nobits
+ 713              		.align	2
+ 716              	Y1_st:
+ 717 0000 00000000 		.space	4
+ 718              		.text
+ 719              	.Letext0:
+ 720              		.file 3 "CMSIS/Devices/STM32F1xx/Inc/STM32f103xB/stm32f103xb.h"
+ 721              		.file 4 "D:/Programs/Education/STM32/Tools/Xpack/arm-none-eabi/include/machine/_default_types.h"
+ 722              		.file 5 "D:/Programs/Education/STM32/Tools/Xpack/arm-none-eabi/include/sys/_stdint.h"
+ARM GAS  C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s 			page 45
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:24     .text.TIM2_IRQHandler:00000000 $t
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:30     .text.TIM2_IRQHandler:00000000 TIM2_IRQHandler
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:294    .text.TIM2_IRQHandler:00000134 $d
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:688    .bss.system_fault:00000000 system_fault
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:702    .bss.Y4_st:00000000 Y4_st
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:675    .bss.i_term2:00000000 i_term2
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:709    .bss.Y2_st:00000000 Y2_st
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:682    .bss.i_term1:00000000 i_term1
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:695    .bss.current_x1:00000000 current_x1
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:315    .text.Clock_Config_72MHz:00000000 $t
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:321    .text.Clock_Config_72MHz:00000000 Clock_Config_72MHz
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:396    .text.Clock_Config_72MHz:00000054 $d
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:402    .text.Timer2_Init_1200Hz:00000000 $t
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:408    .text.Timer2_Init_1200Hz:00000000 Timer2_Init_1200Hz
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:479    .text.Timer2_Init_1200Hz:00000038 $d
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:485    .text.main:00000000 $t
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:491    .text.main:00000000 main
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:649    .text.main:000000c4 $d
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:716    .bss.Y1_st:00000000 Y1_st
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:672    .bss.i_term2:00000000 $d
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:679    .bss.i_term1:00000000 $d
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:689    .bss.system_fault:00000000 $d
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:692    .bss.current_x1:00000000 $d
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:699    .bss.Y4_st:00000000 $d
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:706    .bss.Y2_st:00000000 $d
+C:\Users\Dmitriy\AppData\Local\Temp\ccmDhPtI.s:713    .bss.Y1_st:00000000 $d
+
+UNDEFINED SYMBOLS
+__aeabi_fmul
+__aeabi_fsub
+__aeabi_fadd
+__aeabi_fcmpgt
+__aeabi_fcmplt
